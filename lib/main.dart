@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:holtelmanagement/features/auth/login.dart';
+// import 'package:holtelmanagement/features/auth/login.dart';
+import 'package:holtelmanagement/testingfile.dart';
 
 
 void main() {
@@ -22,7 +24,8 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           scaffoldBackgroundColor: Colors.white
       ),
-      home:   LoginPage(),
+        home:   LoginPage(),
+       // home:   NotificationPage(),
     );
   }
 }

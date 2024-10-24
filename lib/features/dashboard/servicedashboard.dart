@@ -1,8 +1,11 @@
+// import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:holtelmanagement/features/auth/login.dart';
 import 'package:holtelmanagement/features/dashboard/serdash/breakhistory.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
 import 'package:intl/intl.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:swipeable_button_view/swipeable_button_view.dart';
 import '../../Common/app_bar.dart';
 
@@ -29,6 +32,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
   bool _isLoading = false;
   bool isfinished  = false;
   List<String> statusHistory = [];
+  DateTime? _lastNotificationTime;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
 
 
@@ -48,14 +53,28 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
     super.initState();
     // Check initial job status and load requests if active
     _checkInitialJobStatus();
+    _initAudio();
+
   }
 
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+
+  Future<void> _initAudio() async {
+    // Load the default system notification sound
+    await _audioPlayer.setAsset('assets/audio/notification1.wav');
+    await _audioPlayer.setVolume(0.1);
+
+    await _audioPlayer.setLoopMode(LoopMode.off);
+  }
 
   Future<bool> _onWillPop() async {
     return false; // Return false to disable back button
   }
-
-
   Future<void> _updateJobStatus() async {
     final request = _generalRequests.isNotEmpty ? _generalRequests[0] : null;
     if (request != null) {
@@ -63,53 +82,126 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
       String currentStatus = _statuses[_currentStatusIndex];
 
       try {
-
-        print('Current status: $currentStatus');
-        print('Next status (if available): ${_currentStatusIndex < _statuses.length - 1 ? _statuses[_currentStatusIndex] : 'Completed'}');
-
-        // Make the API call
         await _apiService.Statusupdate(
           widget.userId,
           currentStatus,
           requestJobHistoryId,
         );
 
-        // Update local state after successful API call
-        setState(() {
-          // Update current status in the request
-          request['jobStatus'] = currentStatus;
+        // Play system sound for status update
+        // await _playSystemSound();
 
-          // Add to status history with timestamp
+        setState(() {
+          request['jobStatus'] = currentStatus;
           String timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
           statusHistory.add('$timestamp: $currentStatus');
 
-          // Move to the next status if not already completed
           if (_currentStatusIndex < _statuses.length - 1) {
-            _currentStatusIndex++;  // Increment to next status
+            _currentStatusIndex++;
             request['nextJobStatus'] = _statuses[_currentStatusIndex];
           } else {
-            request['nextJobStatus'] = 'Completed';  // Final status
+            request['nextJobStatus'] = 'Completed';
           }
         });
 
-        // Show success message with current and next status
         String nextStatus = _currentStatusIndex < _statuses.length - 1
             ? _statuses[_currentStatusIndex]
             : 'Completed';
-        _showSnackBar(
-            'Status updated to: $currentStatus\nNext status: $nextStatus'
+
+        _showOverlayNotification(
+            'Status updated: $currentStatus → $nextStatus',
+            isNew: false
         );
 
       } catch (e) {
         print('Failed to update task: ${e.toString()}');
-        print('userId: ${widget.userId}, jobStatus: $currentStatus, requestJobHistoryId: $requestJobHistoryId');
-
-        // Revert any local changes if the API call fails
         _showSnackBar('Failed to update status: ${e.toString()}', isError: true);
       }
-    } else {
-      _showSnackBar('No request available to update status.', isError: true);
     }
+  }
+
+
+  Future<void> _playNotificationSound() async {
+    if (_lastNotificationTime == null ||
+        DateTime.now().difference(_lastNotificationTime!) > Duration(seconds: 1)) {
+      try {
+        // Play system notification sound
+        await SystemSound.play(SystemSoundType.alert);
+
+        // Additional bell sound using just_audio
+        await _audioPlayer.setClip(
+          start: Duration.zero,
+          end: Duration(seconds: 3),
+        );
+
+        await _audioPlayer.seek(Duration.zero);
+        await _audioPlayer.play();
+
+        _lastNotificationTime = DateTime.now();
+      } catch (e) {
+        print('Error playing notification sound: $e');
+      }
+    }
+  }
+
+
+
+  void _showOverlayNotification(String message, {bool isNew = false}) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Container(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Icon(
+                isNew ? Icons.notifications_active : Icons.notifications,
+                color: Colors.white,
+                size: 28,
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isNew ? 'New Request!' : 'Request Update',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      message,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        backgroundColor: isNew ? Colors.blue.shade700 : Colors.green.shade600,
+        duration: Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: EdgeInsets.all(8),
+        elevation: 6,
+        action: isNew ? SnackBarAction(
+          label: 'VIEW',
+          textColor: Colors.white,
+          onPressed: () {
+            // Scroll to the new request
+            // Implementation depends on your ListView controller
+          },
+        ) : null,
+      ),
+    );
   }
 
 
@@ -184,6 +276,24 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
 
     try {
       final requests = await _apiService.getGeneralRequestsById();
+
+      // Check for new requests
+      final newRequests = requests.where((newRequest) =>
+      !_generalRequests.any((oldRequest) =>
+      oldRequest['requestJobHistoryId'] == newRequest['requestJobHistoryId'])).toList();
+
+      if (newRequests.isNotEmpty) {
+        // Play notification sound for new requests
+        await _playNotificationSound();
+
+        for (var request in newRequests) {
+          _showOverlayNotification(
+              '${request['userName']} - ${request['taskName']} (${request['roomName']})',
+              isNew: true
+          );
+        }
+      }
+
       setState(() {
         _generalRequests = requests;
       });
@@ -211,10 +321,16 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
 
   Widget _buildRequestCard(Map<String, dynamic> request, double screenWidth, double screenHeight) {
     bool isCompleted = request['jobStatus'] == 'Completed';
-
     return Card(
       margin: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
-      elevation: 2,
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isCompleted ? Colors.green.withOpacity(0.5) : Colors.blue.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: EdgeInsets.all(screenWidth * 0.04),
         child: Column(
@@ -232,54 +348,53 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
                     ),
                   ),
                 ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isCompleted ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    request['jobStatus'] ?? 'N/A',
+                    style: TextStyle(
+                      color: isCompleted ? Colors.green : Colors.blue,
+                      fontSize: screenWidth * 0.035,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
               ],
             ),
-            SizedBox(height: screenHeight * 0.015),
+            Divider(height: screenHeight * 0.02),
             _buildInfoRow('Request', request['taskName'] ?? 'N/A', screenWidth),
             _buildInfoRow('Location', request['roomName'] ?? 'N/A', screenWidth),
             _buildInfoRow('Description', request['Description'] ?? 'N/A', screenWidth),
-            _buildInfoRow('requestJobHistoryId', request['requestJobHistoryId'] ?? 'N/A', screenWidth),
-
-            TextButton(
-              onPressed: () async {
-                await _updateJobStatus();
-              },
-              child: Text(
-                'Current: ${request['jobStatus'] ?? 'N/A'}',
-                style: TextStyle(fontSize: screenWidth * 0.035),
-              ),
-              style: TextButton.styleFrom(foregroundColor: Colors.green),
-            ),
             SizedBox(height: screenHeight * 0.015),
-
-            SwipeableButtonView(
-              buttonText: isCompleted ? "Completed" : "Swipe to Update Status",
-              buttonWidget: Container(
-                child: Icon(
+            if (!isCompleted)
+              SwipeableButtonView(
+                buttonText: "Swipe to Update Status",
+                buttonWidget: Icon(
                   Icons.arrow_back_ios_new_sharp,
-                  color: isCompleted ? Colors.grey : Colors.greenAccent,
+                  color: Colors.white,
                   size: screenWidth * 0.05,
                 ),
-              ),
-              onWaitingProcess: () async {
-                if (!isCompleted) {
-                  await Future.delayed(Duration(seconds: 2));
+                onWaitingProcess: () async {
+                  await Future.delayed(Duration(seconds: 1));
                   if (mounted) {
                     setState(() {
                       isfinished = true;
                     });
                     await _updateJobStatus();
                   }
-                }
-              },
-              activeColor: isCompleted ? Colors.grey : Colors.blue,
-              isFinished: isfinished,
-              onFinish: () {
-                setState(() {
-                  isfinished = false;
-                });
-              },
-            ),
+                },
+                activeColor: Colors.blue,
+                isFinished: isfinished,
+                onFinish: () {
+                  setState(() {
+                    isfinished = false;
+                  });
+                },
+              ),
           ],
         ),
       ),
@@ -302,7 +417,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
       ),
       onWaitingProcess: () async {
         // Simulate delay (API call time)
-        await Future.delayed(Duration(seconds: 2));
+        await Future.delayed(Duration(seconds: 1));
 
         // Update the status when swipe is completed
         await _updateJobStatus(); // This will handle API and UI updates

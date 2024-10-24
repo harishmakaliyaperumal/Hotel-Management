@@ -15,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscureText = true;
 
 
   // Keys for SharedPreferences
@@ -79,12 +80,12 @@ class _LoginPageState extends State<LoginPage> {
       // print('User Data: $userDashboardData');
 
       // Navigate based on the userType
-      if (userType == 'Customer') {
+      if (userType == 'CUSTOMER') {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) =>UserDashboard(userName: userName,
           userId: userId,
           loginResponse: response,)));
-      } else if (userType == 'Service') {
+      } else if (userType == 'SERVICE') {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) =>ServicesDashboard(
           userId: userId,
@@ -181,30 +182,41 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: 20),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      style: TextStyle(color: Colors.black),
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.lock, color: Colors.black),
-                        hintText: "Password",
-                        hintStyle: TextStyle(color: Colors.black),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color(0xFF7bb274), width: 4.0), // Green border when not focused
+                  TextFormField(
+                    controller: _passwordController,
+                      obscureText: _obscureText,
+                    style: TextStyle(color: Colors.black),
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.lock, color: Colors.black),
+                      hintText: "Password",
+                      hintStyle: TextStyle(color: Colors.black),
+                      filled: true,
+                      fillColor: Colors.white,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Color(0xFF7bb274), width: 4.0), // Green border when not focused
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color:Color(0xFF7bb274), width: 4.0), // Blue border when focused
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureText ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.black87,
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color:Color(0xFF7bb274), width: 4.0), // Blue border when focused
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureText = !_obscureText;
+                          });
+                        },
                       ),
                     ),
+                  ),
                     SizedBox(height: 20),
                     _isLoading
                         ? CircularProgressIndicator(

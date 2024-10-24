@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  final String baseUrl = 'http://13.127.57.68:8080';
+  final String baseUrl = 'https://www.hotels.annulartech.net';
 
   // Login functional
   Future<Map<String, dynamic>> login(String username, String password,) async {

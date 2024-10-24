@@ -132,7 +132,7 @@ class _UserDashboardState extends State<UserDashboard> {
                     borderSide: BorderSide(color: Colors.white),
                   ),
                   filled: true,
-                  fillColor: Colors.grey,
+                  fillColor: Color(0xFFC4DAD2),
                 ),
                 style: TextStyle(color: Colors.black),
                 value: _selectedTaskId,
@@ -167,7 +167,7 @@ class _UserDashboardState extends State<UserDashboard> {
                   labelText: 'Description',
                   labelStyle: TextStyle(color: Colors.white),
                   filled: true,
-                  fillColor: Colors.grey,
+                  fillColor: Color(0xFFC4DAD2),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide(color: Colors.white),
