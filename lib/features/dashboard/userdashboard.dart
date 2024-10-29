@@ -7,11 +7,17 @@ class UserDashboard extends StatefulWidget {
   final String userName;
   final int userId;
   final Map<String, dynamic> loginResponse;
+  final int roomNo;
+  final int floorId;
+
 
   UserDashboard({
     required this.userName,
     required this.userId,
     required this.loginResponse,
+    required this.roomNo,
+    required this.floorId,
+
   });
 
   @override
@@ -25,14 +31,65 @@ class _UserDashboardState extends State<UserDashboard> {
   List<Map<String, dynamic>> _tasks = []; // Task list from API
   bool _isLoading = true; // Loading indicator
   final ApiService _apiService = ApiService();
+  List<Map<String, dynamic>> _history = [];
+  bool _isHistoryLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadTasks();
+    _loadHistory();
   }
 
-  // Fetch tasks from the API via ApiService
+  Future<void> _loadHistory() async {
+    try {
+      setState(() {
+        _isHistoryLoading = true;
+      });
+
+      final requests = await _apiService.getCustomerRequestsById();
+
+      setState(() {
+        _history = requests;
+        _isHistoryLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isHistoryLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load history: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatDate(String? dateTimeStr) {
+    if (dateTimeStr == null || dateTimeStr.isEmpty) return 'N/A';
+    try {
+      final dateTime = DateTime.parse(dateTimeStr);
+      // return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
+      return '${dateTime.day.toString().padLeft(2, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.year}';
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
+  String _formatTime(String? dateTimeStr) {
+    if (dateTimeStr == null || dateTimeStr.isEmpty) return 'N/A';
+    try {
+      final dateTime = DateTime.parse(dateTimeStr);
+      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
+
   // Fetch tasks from the API via ApiService
   Future<void> _loadTasks() async {
     try {
@@ -98,10 +155,190 @@ class _UserDashboardState extends State<UserDashboard> {
     }
   }
 
+
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'in progress':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Widget _buildHistoryCard() {
+  //   if (_isHistoryLoading) {
+  //     return Center(child: CircularProgressIndicator());
+  //   }
+  //
+  //   if (_history.isEmpty) {
+  //     return Card(
+  //       elevation: 4,
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(15),
+  //         side: BorderSide(color: Color(0xff013457), width: 1.5),
+  //       ),
+  //       child: Padding(
+  //         padding: EdgeInsets.all(16),
+  //         child: Center(
+  //           child: Text(
+  //             'No request history available',
+  //             style: TextStyle(
+  //               fontSize: 16,
+  //               color: Colors.grey[600],
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     );
+  //   }
+  //
+  //   return Column(
+  //     children: [
+  //       Container(
+  //         padding: EdgeInsets.all(16),
+  //         decoration: BoxDecoration(
+  //           color: Color(0xff013457),
+  //           borderRadius: BorderRadius.circular(15),
+  //         ),
+  //         child: Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             Text(
+  //               'Request History',
+  //               style: TextStyle(
+  //                 color: Colors.white,
+  //                 fontSize: 18,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //             IconButton(
+  //               icon: Icon(Icons.refresh, color: Colors.white),
+  //               onPressed: _loadHistory,
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //       SizedBox(height: 10),
+  //       Expanded(
+  //         child: ListView.builder(
+  //           itemCount: _history.length,
+  //           itemBuilder: (context, index) {
+  //             final item = _history[index];
+  //             return Card(
+  //               margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+  //               elevation: 4,
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(15),
+  //                 side: BorderSide(color: Color(0xff013457), width: 1),
+  //               ),
+  //               child: Padding(
+  //                 padding: EdgeInsets.all(16),
+  //                 child: Column(
+  //                   crossAxisAlignment: CrossAxisAlignment.start,
+  //                   children: [
+  //                     Row(
+  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                       children: [
+  //                         Expanded(
+  //                           child: Text(
+  //                             item['taskName'] ?? 'N/A',
+  //                             style: TextStyle(
+  //                               fontSize: 18,
+  //                               fontWeight: FontWeight.bold,
+  //                               color: Color(0xff013457),
+  //                             ),
+  //                           ),
+  //                         ),
+  //                         Container(
+  //                           padding: EdgeInsets.symmetric(
+  //                             horizontal: 12,
+  //                             vertical: 6,
+  //                           ),
+  //                           decoration: BoxDecoration(
+  //                             color: _getStatusColor(item['jobStatus'] ?? '')
+  //                                 .withOpacity(0.2),
+  //                             borderRadius: BorderRadius.circular(12),
+  //                           ),
+  //                           child: Text(
+  //                             item['jobStatus'] ?? 'N/A',
+  //                             style: TextStyle(
+  //                               color: _getStatusColor(item['jobStatus'] ?? ''),
+  //                               fontWeight: FontWeight.bold,
+  //                             ),
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     SizedBox(height: 12),
+  //                     Row(
+  //                       children: [
+  //                         Icon(Icons.calendar_today,
+  //                             size: 16, color: Colors.grey),
+  //                         SizedBox(width: 8),
+  //                         Text(
+  //                           'Start: ${_formatDate(item['starttime'])}',
+  //                           style: TextStyle(color: Colors.grey[700]),
+  //                         ),
+  //                         SizedBox(width: 16),
+  //                         Icon(Icons.access_time, size: 16, color: Colors.grey),
+  //                         SizedBox(width: 8),
+  //                         Text(
+  //                           _formatTime(item['starttime']),
+  //                           style: TextStyle(color: Colors.grey[700]),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     SizedBox(height: 8),
+  //                     Row(
+  //                       children: [
+  //                         Icon(Icons.calendar_today,
+  //                             size: 16, color: Colors.grey),
+  //                         SizedBox(width: 8),
+  //                         Text(
+  //                           'End: ${_formatDate(item['endTime'])}',
+  //                           style: TextStyle(color: Colors.grey[700]),
+  //                         ),
+  //                         SizedBox(width: 16),
+  //                         Icon(Icons.access_time, size: 16, color: Colors.grey),
+  //                         SizedBox(width: 8),
+  //                         Text(
+  //                           _formatTime(item['endTime']),
+  //                           style: TextStyle(color: Colors.grey[700]),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     if (item['description'] != null &&
+  //                         item['description'].toString().isNotEmpty) ...[
+  //                       SizedBox(height: 12),
+  //                       Text(
+  //                         item['description'],
+  //                         style: TextStyle(
+  //                           color: Colors.grey[600],
+  //                           fontSize: 14,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ],
+  //                 ),
+  //               ),
+  //             );
+  //           },
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: buildAppBar(
+        context,
         widget.userName,
             () {
           Navigator.of(context).pushReplacement(
@@ -125,14 +362,14 @@ class _UserDashboardState extends State<UserDashboard> {
                   labelStyle: TextStyle(color: Colors.white),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide(color: Colors.white),
+                    borderSide: BorderSide(color: Color(0xff013457), width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide(color: Colors.white),
+                    borderSide: BorderSide(color: Color(0xff013457), width: 1.5),
                   ),
-                  filled: true,
-                  fillColor: Color(0xFFC4DAD2),
+                  // filled: true,
+                  // fillColor: Color(0xFFC4DAD2),
                 ),
                 style: TextStyle(color: Colors.black),
                 value: _selectedTaskId,
@@ -162,19 +399,19 @@ class _UserDashboardState extends State<UserDashboard> {
               TextFormField(
                 controller: _messageController,
                 maxLines: 3,
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.black),
                 decoration: InputDecoration(
                   labelText: 'Description',
-                  labelStyle: TextStyle(color: Colors.white),
-                  filled: true,
-                  fillColor: Color(0xFFC4DAD2),
+                  labelStyle: TextStyle(color: Colors.black),
+                  // filled: true,
+                  // fillColor: Color(0xFFC4DAD2),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide(color: Colors.white),
+                    borderSide: BorderSide(color: Color(0xff013457), width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: Colors.white),
+                    borderSide: BorderSide(color: Color(0xff013457), width: 1.5),
                   ),
                   alignLabelWithHint: true,
                 ),
@@ -191,13 +428,8 @@ class _UserDashboardState extends State<UserDashboard> {
               Center(
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.lightGreenAccent.withOpacity(0.1),
-                        Color(0xFF7bb274),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(8.0), // Rounded corners for the button
+                      color: Color(0xff013457),
+                       borderRadius: BorderRadius.circular(8.0), // Rounded corners for the button
                   ),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -209,7 +441,7 @@ class _UserDashboardState extends State<UserDashboard> {
                       'Send Request',
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.black,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -217,6 +449,184 @@ class _UserDashboardState extends State<UserDashboard> {
                 ),
               ),
 
+              SizedBox(height: 30),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: Color(0xff013457), width: 1.5),
+                  ),
+                  child: Column(
+                    children: [
+                      // History Header
+                      Container(
+                        padding: EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Color(0xff013457),
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(13),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Request History',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.refresh, color: Colors.white),
+                              onPressed: _loadHistory,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // History List
+                      Expanded(
+                        child: _isHistoryLoading
+                            ? Center(child: CircularProgressIndicator())
+                            : _history.isEmpty
+                            ? Center(
+                          child: Text(
+                            'No request history available',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        )
+                            : ListView.builder(
+                          padding: EdgeInsets.all(8),
+                          itemCount: _history.length,
+                          itemBuilder: (context, index) {
+                            final item = _history[index];
+                            return Card(
+                              margin: EdgeInsets.all(8),
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Task Name Row
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: Text(
+                                              item['taskName'] ?? 'N/A', // Displaying taskName from API
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xff013457),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        // Status Container
+                                        Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: _getStatusColor(item['jobStatus'] ?? '').withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            item['jobStatus'] ?? 'N/A',
+                                            style: TextStyle(
+                                              color: _getStatusColor(item['jobStatus'] ?? ''),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 8),
+
+                                    // Start Time Row
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Date: ',  // Label
+                                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                        ),
+                                        Text(
+                                          _formatDate(item['starttime']),
+                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
+                                        ),
+
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Start Time: ',  // Label
+                                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                        ),
+                                        Text(
+                                          _formatTime(item['starttime']),
+                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
+                                        ),
+
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'End Time: ',  // Label
+                                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                        ),
+                                        Text(
+                                          _formatTime(item['endTime']),
+                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
+                                        ),
+
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+
+
+
+                                    // Row(
+                                    //   mainAxisAlignment: MainAxisAlignment.start,
+                                    //   children: [
+                                    //     Text(
+                                    //       _formatTime(item['EndTime']),
+                                    //       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
+                                    //     ),
+                                    //     Text(
+                                    //       item['endTime'] ?? 'N/A',
+                                    //       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
+                                    //     ),
+                                    //   ],
+                                    // ),
+
+
+                                 ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

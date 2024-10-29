@@ -1,4 +1,5 @@
 // import 'package:audioplayers/audioplayers.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:holtelmanagement/features/auth/login.dart';
@@ -25,20 +26,20 @@ class ServicesDashboard extends StatefulWidget {
   @override
   _ServicesDashboardState createState() => _ServicesDashboardState();
 }
-class _ServicesDashboardState extends State<ServicesDashboard> {
+class _ServicesDashboardState extends State<ServicesDashboard> with SingleTickerProviderStateMixin {
   bool _jobStatus = false;
   List<Map<String, dynamic>> _generalRequests = [];
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
-  bool isfinished  = false;
+  bool isfinished = false;
   List<String> statusHistory = [];
+  DateTime? _selectedDate;
+  late TabController _tabController;
+  List<Map<String, dynamic>> _availableRequests = [];
+  List<Map<String, dynamic>> _completedRequests = [];
+  List<Map<String, dynamic>> _filteredCompletedRequests = [];
   DateTime? _lastNotificationTime;
   final AudioPlayer _audioPlayer = AudioPlayer();
-
-
-
-
-
   int _currentStatusIndex = 0; // Index for tracking current status
   final List<String> _statuses = [
     'Accepted',
@@ -47,22 +48,93 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
     'Customer Feedback',
     'Completed'
   ];
+  Timer? _autoRefreshTimer;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     // Check initial job status and load requests if active
     _checkInitialJobStatus();
+    _selectedDate = DateTime.now();
     _initAudio();
+    _startAutoRefresh();
 
+    _tabController.addListener(() {
+      if (_tabController.index == 1) { // Completed tasks tab
+        _filterCompletedTasks();
+      }
+    });
   }
+
 
   @override
   void dispose() {
+    _tabController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
 
+  void _filterCompletedTasks() {
+    if (_selectedDate == null) {
+      setState(() {
+        _filteredCompletedRequests = List.from(_completedRequests);
+      });
+      return;
+    }
+
+    setState(() {
+      _filteredCompletedRequests = _completedRequests.where((request) {
+        if (request['completedAt'] == null) return false;
+
+        DateTime completedDate = DateTime.parse(request['completedAt']);
+        return DateUtils.isSameDay(completedDate, _selectedDate);
+      }).toList();
+    });
+  }
+
+  // Add new method to show date picker
+  Future<void> _showDatePicker() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Color(0xff013457),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+      _filterCompletedTasks();
+    }
+  }
+
+
+  void _startAutoRefresh() {
+    // Cancel existing timer if any
+    _autoRefreshTimer?.cancel();
+
+    // Set up periodic refresh every 30 seconds
+    _autoRefreshTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      if (_jobStatus && mounted) {
+        _fetchGeneralRequests();
+      }
+    });
+  }
 
   Future<void> _initAudio() async {
     // Load the default system notification sound
@@ -75,6 +147,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
   Future<bool> _onWillPop() async {
     return false; // Return false to disable back button
   }
+
   Future<void> _updateJobStatus() async {
     final request = _generalRequests.isNotEmpty ? _generalRequests[0] : null;
     if (request != null) {
@@ -93,7 +166,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
 
         setState(() {
           request['jobStatus'] = currentStatus;
-          String timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+          String timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(
+              DateTime.now());
           statusHistory.add('$timestamp: $currentStatus');
 
           if (_currentStatusIndex < _statuses.length - 1) {
@@ -112,10 +186,10 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
             'Status updated: $currentStatus → $nextStatus',
             isNew: false
         );
-
       } catch (e) {
         print('Failed to update task: ${e.toString()}');
-        _showSnackBar('Failed to update status: ${e.toString()}', isError: true);
+        _showSnackBar(
+            'Failed to update status: ${e.toString()}', isError: true);
       }
     }
   }
@@ -123,7 +197,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
 
   Future<void> _playNotificationSound() async {
     if (_lastNotificationTime == null ||
-        DateTime.now().difference(_lastNotificationTime!) > Duration(seconds: 1)) {
+        DateTime.now().difference(_lastNotificationTime!) >
+            Duration(seconds: 1)) {
       try {
         // Play system notification sound
         await SystemSound.play(SystemSoundType.alert);
@@ -143,7 +218,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
       }
     }
   }
-
 
 
   void _showOverlayNotification(String message, {bool isNew = false}) {
@@ -185,27 +259,14 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
           ),
         ),
         backgroundColor: isNew ? Colors.blue.shade700 : Colors.green.shade600,
-        duration: Duration(seconds: 4),
+        duration: Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
-        margin: EdgeInsets.all(8),
-        elevation: 6,
-        action: isNew ? SnackBarAction(
-          label: 'VIEW',
-          textColor: Colors.white,
-          onPressed: () {
-            // Scroll to the new request
-            // Implementation depends on your ListView controller
-          },
-        ) : null,
       ),
     );
   }
-
-
-
 
 
   Future<void> _checkInitialJobStatus() async {
@@ -253,7 +314,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
           _generalRequests = []; // Clear when inactive
         });
       }
-    }catch (e) {
+    } catch (e) {
       // Show an error message if the status update fails
       _showSnackBar('Error updating status: ${e.toString()}', isError: true);
       setState(() {
@@ -277,35 +338,59 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
     try {
       final requests = await _apiService.getGeneralRequestsById();
 
+      // Filter available and completed requests
+      _availableRequests =
+          requests.where((request) => request['jobStatus'] != 'Completed')
+              .toList();
+      _completedRequests =
+          requests.where((request) => request['jobStatus'] == 'Completed')
+              .toList();
+
+      _completedRequests = requests.where((request) {
+        bool isCompleted = request['jobStatus'] == 'Completed';
+        if (isCompleted && request['completedAt'] == null) {
+          request['completedAt'] = DateTime.now()
+              .toIso8601String(); // Add timestamp for completed tasks
+        }
+        return isCompleted;
+      }).toList();
+
+
+      _filterCompletedTasks();
+
+
       // Check for new requests
-      final newRequests = requests.where((newRequest) =>
+      final newRequests = _availableRequests.where((newRequest) =>
       !_generalRequests.any((oldRequest) =>
-      oldRequest['requestJobHistoryId'] == newRequest['requestJobHistoryId'])).toList();
+      oldRequest['requestJobHistoryId'] == newRequest['requestJobHistoryId']))
+          .toList();
 
       if (newRequests.isNotEmpty) {
-        // Play notification sound for new requests
         await _playNotificationSound();
 
-        for (var request in newRequests) {
-          _showOverlayNotification(
-              '${request['userName']} - ${request['taskName']} (${request['roomName']})',
-              isNew: true
-          );
-        }
+        // for (var request in newRequests) {
+        //   _showOverlayNotification(
+        //       '${request['userName']} - ${request['taskName']} (${request['roomName']})',
+        //       isNew: true
+        //   );
+        // }
       }
 
       setState(() {
-        _generalRequests = requests;
+        _generalRequests = requests; // Update with all requests
       });
 
-      if (_jobStatus && _generalRequests.isEmpty) {
+      if (_jobStatus && _availableRequests.isEmpty) {
         _showSnackBar('No tasks available at the moment');
       }
     } catch (e) {
       print('Error fetching requests: $e');
-      _showSnackBar('Error loading requests. Please try again.', isError: true);
+      // _showSnackBar('Error loading requests. Please try again.', isError: true);
       setState(() {
         _generalRequests = [];
+        _availableRequests = [];
+        _completedRequests = [];
+        _filteredCompletedRequests = [];
       });
     } finally {
       setState(() {
@@ -313,10 +398,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
       });
     }
   }
-
-
-
-
 
 
   Widget _buildRequestCard(Map<String, dynamic> request, double screenWidth, double screenHeight) {
@@ -365,12 +446,23 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
                 ),
               ],
             ),
+            if (isCompleted && request['completedAt'] != null)
+              Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  'Completed: ${DateFormat('MMM dd, yyyy hh:mm a').format(DateTime.parse(request['completedAt']))}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: screenWidth * 0.035,
+                  ),
+                ),
+              ),
             Divider(height: screenHeight * 0.02),
             _buildInfoRow('Request', request['taskName'] ?? 'N/A', screenWidth),
-            _buildInfoRow('Location', request['roomName'] ?? 'N/A', screenWidth),
+            _buildInfoRow('Location', request['roomId'] ?? 'N/A', screenWidth),
             _buildInfoRow('Description', request['Description'] ?? 'N/A', screenWidth),
-            SizedBox(height: screenHeight * 0.015),
-            if (!isCompleted)
+            if (!isCompleted) ...[
+              SizedBox(height: screenHeight * 0.015),
               SwipeableButtonView(
                 buttonText: "Swipe to Update Status",
                 buttonWidget: Icon(
@@ -387,7 +479,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
                     await _updateJobStatus();
                   }
                 },
-                activeColor: Colors.blue,
+                activeColor: Color(0xff013457),
                 isFinished: isfinished,
                 onFinish: () {
                   setState(() {
@@ -395,14 +487,12 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
                   });
                 },
               ),
+            ],
           ],
         ),
       ),
     );
   }
-
-
-
 
 
   // Swipeable button that updates status
@@ -426,7 +516,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
           isfinished = true; // Indicate that the swipe action is finished
         });
       },
-      activeColor: Colors.blue,
+      activeColor: Color(0xff013457),
       isFinished: isfinished,
       onFinish: () {
         // Reset the finished state to allow for the next swipe
@@ -436,9 +526,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
       },
     );
   }
-
-
-
 
 
   Widget _buildInfoRow(String label, String value, double screenWidth) {
@@ -472,110 +559,97 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
   }
 
 
-  // Widget _buildStatusChip(String text, Color color) {
-  //   return Container(
-  //     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-  //     decoration: BoxDecoration(
-  //       color: color.withOpacity(0.1),
-  //       borderRadius: BorderRadius.circular(16),
-  //       border: Border.all(color: color.withOpacity(0.3)),
-  //     ),
-  //     child: Text(
-  //       text,
-  //       style: TextStyle(
-  //         color: color,
-  //         fontSize: 13,
-  //         fontWeight: FontWeight.w500,
-  //       ),
-  //     ),
-  //   );
-  // }
-  //
-  //
-  // Widget _buildEmptyState() {
-  //   return Center(
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         Icon(
-  //           _jobStatus ? Icons.inbox_outlined : Icons.toggle_off_outlined,
-  //           size: 48,
-  //           color: Colors.grey[400],
-  //         ),
-  //         SizedBox(height: 16),
-  //         Text(
-  //           _jobStatus
-  //               ? 'No tasks available at the moment'
-  //               : 'Toggle status to active to view tasks',
-  //           style: TextStyle(
-  //             fontSize: 18,
-  //             color: Colors.grey[600],
-  //           ),
-  //         ),
-  //         if (_jobStatus) ...[
-  //           SizedBox(height: 16),
-  //           TextButton.icon(
-  //             onPressed: _fetchGeneralRequests,
-  //             icon: Icon(Icons.refresh),
-  //             label: Text('Refresh'),
-  //             style: TextButton.styleFrom(
-  //               foregroundColor: Colors.blue,
-  //             ),
-  //           ),
-  //         ],
-  //       ],
-  //     ),
-  //   );
-  // }
-
-
-
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    final screenWidth = MediaQuery
+        .of(context)
+        .size
+        .width;
+    final screenHeight = MediaQuery
+        .of(context)
+        .size
+        .height;
 
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
-        appBar: buildAppBar(
-          widget.userName,
-              () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => LoginPage()),
-            );
-          },
-          extraActions: [
-            IconButton(
-              icon: Icon(Icons.free_breakfast_rounded, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => BreakHistory(userId: widget.userId),
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(kToolbarHeight * 2),
+          child: Column(
+            children: [
+              buildAppBar(
+                context,
+                widget.userName,
+                    () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                  );
+                },
+                extraActions: [
+                  IconButton(
+                    icon: Icon(
+                        Icons.free_breakfast_rounded, color: Colors.white),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              BreakHistory(userId: widget.userId),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-            _isLoading
-                ? SizedBox(
-              width: 50,
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 2,
+                  _isLoading
+                      ? SizedBox(
+                    width: 50,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  )
+                      : Switch(
+                    value: _jobStatus,
+                    onChanged: _toggleJobStatus,
+                    activeColor: Colors.blue,
+                    inactiveThumbColor: Colors.red,
+                    inactiveTrackColor: Colors.grey,
+                  ),
+                ],
+              ),
+              Container(
+                color: Color(0xff013457),
+                child: TabBar(
+                  controller: _tabController,
+                  tabs: [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.pending_actions),
+                          SizedBox(width: 8),
+                          Text('Available (${_availableRequests.length})'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.task_alt),
+                          SizedBox(width: 8),
+                          Text('Completed (${_completedRequests.length})'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
                 ),
               ),
-            )
-                : Switch(
-              value: _jobStatus,
-              onChanged: _toggleJobStatus,
-              activeColor: Colors.blue,
-              inactiveThumbColor: Colors.red,
-              inactiveTrackColor: Colors.grey,
-            ),
-          ],
+            ],
+          ),
         ),
         body: RefreshIndicator(
           onRefresh: () async {
@@ -583,78 +657,33 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
               await _fetchGeneralRequests();
             }
           },
-          child: Padding(
-            padding: EdgeInsets.all(screenWidth * 0.04), // Responsive padding
+          child: _jobStatus ? TabBarView(
+            controller: _tabController,
+            children: [
+              // Available Tasks Tab
+              _buildTaskList(
+                  _availableRequests, screenWidth, screenHeight, false),
+              // Completed Tasks Tab
+              _buildTaskList(
+                  _completedRequests, screenWidth, screenHeight, true),
+            ],
+          ) : Center(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Available Requests: ${_generalRequests.length}',
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.05, // Responsive font size
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () async {
-                        try {
-                          await _apiService.notifyBreaks(widget.userId);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Break notified!")),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Failed to notify breaks")),
-                          );
-                        }
-                      },
-                      icon: Icon(Icons.notifications_active),
-                      label: Text(
-                        'Notify Breaks',
-                        style: TextStyle(fontSize: screenWidth * 0.04),
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.blue,
-                      ),
-                    ),
-                  ],
+                Icon(
+                  Icons.toggle_off_outlined,
+                  size: screenWidth * 0.12,
+                  color: Colors.grey[400],
                 ),
                 SizedBox(height: screenHeight * 0.02),
-                Expanded(
-                  child: _generalRequests.isEmpty
-                      ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _jobStatus
-                              ? Icons.inbox_outlined
-                              : Icons.toggle_off_outlined,
-                          size: screenWidth * 0.12,
-                          color: Colors.grey[400],
-                        ),
-                        SizedBox(height: screenHeight * 0.02),
-                        Text(
-                          _jobStatus
-                              ? 'No requests available at the moment'
-                              : 'Toggle status to active to view requests',
-                          style: TextStyle(
-                            fontSize: screenWidth * 0.045,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  )
-                      : ListView.builder(
-                    itemCount: _generalRequests.length,
-                    itemBuilder: (context, index) =>
-                        _buildRequestCard(_generalRequests[index], screenWidth, screenHeight),
+                Text(
+                  'Toggle status to active to view requests',
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.045,
+                    color: Colors.grey[600],
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -663,4 +692,116 @@ class _ServicesDashboardState extends State<ServicesDashboard> {
       ),
     );
   }
+
+  Widget _buildTaskList(List<Map<String, dynamic>> tasks, double screenWidth, double screenHeight, bool isCompleted) {
+    return Column(
+      children: [
+        if (isCompleted) _buildFilterHeader(screenWidth, screenHeight),
+        Expanded(
+          child: _buildTaskListContent(
+            isCompleted ? _filteredCompletedRequests : tasks,
+            screenWidth,
+            screenHeight,
+            isCompleted,
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildFilterHeader(double screenWidth, double screenHeight) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.04,
+        vertical: screenHeight * 0.01,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            _selectedDate != null
+                ? 'Completed on ${DateFormat('MMM dd, yyyy').format(_selectedDate!)}'
+                : 'All completed tasks',
+            style: TextStyle(
+              fontSize: screenWidth * 0.04,
+              fontWeight: FontWeight.w500,
+              color: Color(0xff013457),
+            ),
+          ),
+          Row(
+            children: [
+              if (_selectedDate != null)
+                IconButton(
+                  icon: Icon(Icons.clear, color: Colors.grey),
+                  onPressed: () {
+                    setState(() {
+                      _selectedDate = null;
+                    });
+                    _filterCompletedTasks();
+                  },
+                  tooltip: 'Clear date filter',
+                ),
+              IconButton(
+                icon: Icon(
+                  Icons.calendar_month,
+                  color: Color(0xff013457),
+                ),
+                onPressed: _showDatePicker,
+                tooltip: 'Select date',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskListContent(List<Map<String, dynamic>> tasks, double screenWidth, double screenHeight, bool isCompleted) {
+    if (tasks.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isCompleted ? Icons.task_alt : Icons.inbox_outlined,
+              size: screenWidth * 0.12,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: screenHeight * 0.02),
+            Text(
+              isCompleted
+                  ? _selectedDate != null
+                  ? 'No completed tasks on ${DateFormat('MMM dd, yyyy').format(_selectedDate!)}'
+                  : 'No completed tasks'
+                  : 'No available requests at the moment',
+              style: TextStyle(
+                fontSize: screenWidth * 0.045,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.all(screenWidth * 0.04),
+      itemCount: tasks.length,
+      itemBuilder: (context, index) => _buildRequestCard(tasks[index], screenWidth, screenHeight),
+    );
+  }
+
 }
+

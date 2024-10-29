@@ -88,6 +88,7 @@ class _BreakHistoryState extends State<BreakHistory> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Break History'),
+        backgroundColor:Color(0xff013457),
       ),
       body: RefreshIndicator(
         onRefresh: fetchBreakHistory,

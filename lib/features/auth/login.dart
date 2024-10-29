@@ -83,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
       if (userType == 'CUSTOMER') {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) =>UserDashboard(userName: userName,
-          userId: userId,
+          userId: userId,floorId:floorId,roomNo: roomNo,
           loginResponse: response,)));
       } else if (userType == 'SERVICE') {
         Navigator.pushReplacement(
@@ -120,7 +120,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -141,7 +141,7 @@ class _LoginPageState extends State<LoginPage> {
                     BoxShadow(
                       color: Colors.white,
                       blurRadius: 15,
-                      offset: Offset(4, 4),
+                      offset: Offset(2, 2),
                     ),
                   ],
                 ),
@@ -159,20 +159,20 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(height: 30),
                     TextFormField(
                       controller: _usernameController,
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(color: Colors.black26),
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.supervised_user_circle_outlined, color: Colors.black),
+                        prefixIcon: Icon(Icons.supervised_user_circle_outlined, color: Colors.black26),
                         hintText: "User Name",
-                        hintStyle: TextStyle(color: Colors.black),
-                        filled: true,
-                        fillColor: Colors.white,
+                        hintStyle: TextStyle(color: Colors.black26),
+                        // filled: true,
+                        // fillColor: Colors.black26,
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color(0xFF7bb274), width: 4.0), // Green border when not focused
+                          borderSide: BorderSide(color: Color(0xff013457), width: 1.5), // Green border when not focused
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color(0xFF7bb274), width: 4.0), // Blue border when focused
+                          borderSide: BorderSide(color: Color(0xff013457), width: 1.5), // Blue border when focused
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -185,20 +185,20 @@ class _LoginPageState extends State<LoginPage> {
                   TextFormField(
                     controller: _passwordController,
                       obscureText: _obscureText,
-                    style: TextStyle(color: Colors.black),
+                    style: TextStyle(color: Colors.black26),
                     decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.lock, color: Colors.black),
+                      prefixIcon: Icon(Icons.lock, color: Colors.black26),
                       hintText: "Password",
-                      hintStyle: TextStyle(color: Colors.black),
-                      filled: true,
-                      fillColor: Colors.white,
+                      hintStyle: TextStyle(color: Colors.black26),
+                      // filled: true,
+                      // fillColor: Colors.black26,
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Color(0xFF7bb274), width: 4.0), // Green border when not focused
+                        borderSide: BorderSide(color: Color(0xff013457), width: 1.5), // Green border when not focused
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color:Color(0xFF7bb274), width: 4.0), // Blue border when focused
+                        borderSide: BorderSide(color:Color(0xff013457), width: 1.5), // Blue border when focused
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -207,7 +207,7 @@ class _LoginPageState extends State<LoginPage> {
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureText ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.black87,
+                          color: Colors.black26,
                         ),
                         onPressed: () {
                           setState(() {
@@ -220,19 +220,14 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(height: 20),
                     _isLoading
                         ? CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black26),
                     )
                         : Container(
                       width: double.infinity,
                       height: 50,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.lightGreenAccent.withOpacity(0.1),
-                            Color(0xFF7bb274),
-                          ],
-                        ),
+                        color: Color(0xff013457)
                       ),
                       child: ElevatedButton(
                         onPressed: _login,
@@ -247,7 +242,7 @@ class _LoginPageState extends State<LoginPage> {
                           'LOGIN',
                           style: TextStyle(
                             fontSize: 18,
-                            color: Colors.black,
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

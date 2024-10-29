@@ -56,7 +56,7 @@ class ApiService {
       };
 
       final response = await http.get(
-        Uri.parse('$baseUrl/request/getAllTaskData'),
+        Uri.parse('$baseUrl/request/getAllCustomerTaskData'),
         headers: headers,
       );
 
@@ -114,8 +114,8 @@ class ApiService {
         }),
       );
 
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      // print('Response Status Code: ${response.statusCode}');
+      // print('Response Body: ${response.body}');
 
       if (response.statusCode != 200) {
         throw Exception('Failed to send request');
@@ -146,8 +146,8 @@ class ApiService {
         }),
 
       );
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      // print('Response Status Code: ${response.statusCode}');
+      // print('Response Body: ${response.body}');
 
       if (response.statusCode != 200) {
         throw Exception('Failed to notify breaks: ${response.body}');
@@ -227,7 +227,7 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final String? token = prefs.getString('jwt');
 
-      print('Token from SharedPreferences: $token');
+      // print('Token from SharedPreferences: $token');
 
       if (token == null || token.isEmpty) {
         throw Exception('Authentication token is missing or empty');
@@ -235,7 +235,7 @@ class ApiService {
 
       // Define the API endpoint URL
       final String url = '$baseUrl/hotelapp/getGeneralRequestById';
-      print('Calling API: $url');
+      // print('Calling API: $url');
 
       // Make the GET request
       final response = await http.get(
@@ -247,8 +247,8 @@ class ApiService {
       );
 
       // Check the status code and log the response
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      // print('Response Status Code: ${response.statusCode}');
+      // print('Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         // Parse the response body
@@ -269,6 +269,7 @@ class ApiService {
                 'name': item['name']?.toString() ?? '',
                 'roomName': item['roomName']?.toString() ?? '',
                 'jobStatus': item['jobStatus']?.toString() ?? '',
+                'roomId': item['roomId']?.toString() ?? '',
                 'nextJobStatus': item['nextJobStatus']?.toString() ?? '',
                 'requestJobHistoryId': item['requestJobHistoryId']?.toString() ?? '',
               };
@@ -277,7 +278,7 @@ class ApiService {
             // Store the response in SharedPreferences
             await prefs.setString('generalRequests', json.encode(typedData));
 
-            print('Processed ${typedData.length} requests');
+            // print('Processed ${typedData.length} requests');
             return typedData;
           } else {
             throw Exception('Unexpected response format: No data found.');
@@ -289,7 +290,7 @@ class ApiService {
         throw Exception('Failed to fetch data: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error in getGeneralRequestsById: $e');
+      // print('Error in getGeneralRequestsById: $e');
       throw Exception('Failed to fetch general requests: $e');
     }
   }
@@ -329,7 +330,7 @@ class ApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getUserRequestsById() async {
+  Future<List<Map<String, dynamic>>> getCustomerRequestsById() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? token = prefs.getString('jwt');
@@ -367,6 +368,8 @@ class ApiService {
             'taskName': item['taskName'] ?? 'Unknown Task',
             'description': item['description'] ?? '',
             'starttime': item['starttime'] ?? '',
+            'endTime': item['endTime'] ?? '',
+            'jobStatus': item['jobStatus'] ?? '',
             'floorName': item['floorName'] ?? 'Unknown Floor',
             // Add other fields if needed
           };
@@ -385,6 +388,8 @@ class ApiService {
       throw Exception('Failed to fetch general requests: $e');
     }
   }
+
+
 
 
 
