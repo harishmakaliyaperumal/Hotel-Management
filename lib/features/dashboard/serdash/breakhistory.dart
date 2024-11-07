@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 class BreakHistory extends StatefulWidget {
   final int userId;
 
-  BreakHistory({required this.userId});
+  const BreakHistory({super.key, required this.userId});
 
   @override
   _BreakHistoryState createState() => _BreakHistoryState();
@@ -62,20 +62,13 @@ class _BreakHistoryState extends State<BreakHistory> {
   Future<void> fetchBreakHistory() async {
     try {
       final response = await breakService.getAllBreakRequests();
-      if (response != null) {
-        setState(() {
-          breakData = (response as List)
-              .map((item) => BreakRequest.fromJson(item as Map<String, dynamic>))
-              .toList();
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          breakData = [];
-          isLoading = false;
-        });
-      }
-    } catch (e) {
+      setState(() {
+        breakData = (response)
+            .map((item) => BreakRequest.fromJson(item as Map<String, dynamic>))
+            .toList();
+        isLoading = false;
+      });
+        } catch (e) {
       setState(() {
         isLoading = false;
         errorMessage = e.toString();
@@ -87,19 +80,19 @@ class _BreakHistoryState extends State<BreakHistory> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Break History'),
-        backgroundColor:Color(0xff013457),
+        title: const Text('Break History'),
+        backgroundColor:const Color(0xff013457),
       ),
       body: RefreshIndicator(
         onRefresh: fetchBreakHistory,
         child: Padding(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : errorMessage != null
               ? Center(child: Text('Error: $errorMessage'))
               : breakData.isEmpty
-              ? Center(
+              ? const Center(
             child: Text(
               'No break history available',
               style: TextStyle(fontSize: 16),
@@ -110,12 +103,12 @@ class _BreakHistoryState extends State<BreakHistory> {
             children: [
               Text(
                 'Break History - User ID: ${widget.userId}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,

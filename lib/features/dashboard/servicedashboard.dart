@@ -16,7 +16,7 @@ class ServicesDashboard extends StatefulWidget {
   final String? roomNo;
   final String? floorId;
 
-  ServicesDashboard({
+  const ServicesDashboard({super.key, 
     required this.userId,
     required this.userName,
     this.roomNo,
@@ -27,7 +27,7 @@ class ServicesDashboard extends StatefulWidget {
   _ServicesDashboardState createState() => _ServicesDashboardState();
 }
 class _ServicesDashboardState extends State<ServicesDashboard> with SingleTickerProviderStateMixin {
-  bool _jobStatus = false;
+  bool _jobStatus = true;
   List<Map<String, dynamic>> _generalRequests = [];
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
@@ -103,7 +103,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: Color(0xff013457),
               onPrimary: Colors.white,
               surface: Colors.white,
@@ -129,7 +129,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     _autoRefreshTimer?.cancel();
 
     // Set up periodic refresh every 30 seconds
-    _autoRefreshTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (_jobStatus && mounted) {
         _fetchGeneralRequests();
       }
@@ -198,7 +198,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   Future<void> _playNotificationSound() async {
     if (_lastNotificationTime == null ||
         DateTime.now().difference(_lastNotificationTime!) >
-            Duration(seconds: 1)) {
+            const Duration(seconds: 1)) {
       try {
         // Play system notification sound
         await SystemSound.play(SystemSoundType.alert);
@@ -206,7 +206,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         // Additional bell sound using just_audio
         await _audioPlayer.setClip(
           start: Duration.zero,
-          end: Duration(seconds: 3),
+          end: const Duration(seconds: 3),
         );
 
         await _audioPlayer.seek(Duration.zero);
@@ -226,7 +226,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
-          padding: EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
               Icon(
@@ -234,7 +234,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                 color: Colors.white,
                 size: 28,
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,15 +242,15 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                   children: [
                     Text(
                       isNew ? 'New Request!' : 'Request Update',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       message,
-                      style: TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 14),
                     ),
                   ],
                 ),
@@ -259,7 +259,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
           ),
         ),
         backgroundColor: isNew ? Colors.blue.shade700 : Colors.green.shade600,
-        duration: Duration(seconds: 1),
+        duration: const Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
@@ -288,7 +288,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? Colors.red : Colors.green,
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -315,17 +315,17 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         });
       }
     } catch (e) {
-      // Show an error message if the status update fails
       _showSnackBar('Error updating status: ${e.toString()}', isError: true);
       setState(() {
-        _jobStatus = !newValue; // Revert the switch to its original state
+        _jobStatus = !newValue; // Revert to original state on error
       });
     } finally {
       setState(() {
-        _isLoading = false; // Stop the loading indicator
+        _isLoading = false;
       });
     }
   }
+
 
 
   Future<void> _fetchGeneralRequests() async {
@@ -430,7 +430,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: isCompleted ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -448,7 +448,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
             ),
             if (isCompleted && request['completedAt'] != null)
               Padding(
-                padding: EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   'Completed: ${DateFormat('MMM dd, yyyy hh:mm a').format(DateTime.parse(request['completedAt']))}',
                   style: TextStyle(
@@ -471,7 +471,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                   size: screenWidth * 0.05,
                 ),
                 onWaitingProcess: () async {
-                  await Future.delayed(Duration(seconds: 1));
+                  await Future.delayed(const Duration(seconds: 1));
                   if (mounted) {
                     setState(() {
                       isfinished = true;
@@ -479,7 +479,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                     await _updateJobStatus();
                   }
                 },
-                activeColor: Color(0xff013457),
+                activeColor: const Color(0xff013457),
                 isFinished: isfinished,
                 onFinish: () {
                   setState(() {
@@ -500,14 +500,14 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     return SwipeableButtonView(
       buttonText: "Swipe to Update Status",
       buttonWidget: Container(
-        child: Icon(
+        child: const Icon(
           Icons.arrow_back_ios_new_sharp,
           color: Colors.greenAccent,
         ),
       ),
       onWaitingProcess: () async {
         // Simulate delay (API call time)
-        await Future.delayed(Duration(seconds: 1));
+        await Future.delayed(const Duration(seconds: 1));
 
         // Update the status when swipe is completed
         await _updateJobStatus(); // This will handle API and UI updates
@@ -516,7 +516,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
           isfinished = true; // Indicate that the swipe action is finished
         });
       },
-      activeColor: Color(0xff013457),
+      activeColor: const Color(0xff013457),
       isFinished: isfinished,
       onFinish: () {
         // Reset the finished state to allow for the next swipe
@@ -574,7 +574,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       onWillPop: _onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(kToolbarHeight * 2),
+          preferredSize: const Size.fromHeight(kToolbarHeight * 2),
           child: Column(
             children: [
               buildAppBar(
@@ -582,12 +582,12 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                 widget.userName,
                     () {
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => LoginPage()),
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
                   );
                 },
                 extraActions: [
                   IconButton(
-                    icon: Icon(
+                    icon: const Icon(
                         Icons.free_breakfast_rounded, color: Colors.white),
                     onPressed: () {
                       Navigator.of(context).push(
@@ -599,7 +599,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                     },
                   ),
                   _isLoading
-                      ? SizedBox(
+                      ? const SizedBox(
                     width: 50,
                     child: Center(
                       child: CircularProgressIndicator(
@@ -618,7 +618,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                 ],
               ),
               Container(
-                color: Color(0xff013457),
+                color: const Color(0xff013457),
                 child: TabBar(
                   controller: _tabController,
                   tabs: [
@@ -626,8 +626,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.pending_actions),
-                          SizedBox(width: 8),
+                          const Icon(Icons.pending_actions),
+                          const SizedBox(width: 8),
                           Text('Available (${_availableRequests.length})'),
                         ],
                       ),
@@ -636,8 +636,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.task_alt),
-                          SizedBox(width: 8),
+                          const Icon(Icons.task_alt),
+                          const SizedBox(width: 8),
                           Text('Completed (${_completedRequests.length})'),
                         ],
                       ),
@@ -722,7 +722,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 2,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -736,14 +736,14 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
             style: TextStyle(
               fontSize: screenWidth * 0.04,
               fontWeight: FontWeight.w500,
-              color: Color(0xff013457),
+              color: const Color(0xff013457),
             ),
           ),
           Row(
             children: [
               if (_selectedDate != null)
                 IconButton(
-                  icon: Icon(Icons.clear, color: Colors.grey),
+                  icon: const Icon(Icons.clear, color: Colors.grey),
                   onPressed: () {
                     setState(() {
                       _selectedDate = null;
@@ -753,7 +753,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                   tooltip: 'Clear date filter',
                 ),
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.calendar_month,
                   color: Color(0xff013457),
                 ),
@@ -773,6 +773,29 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (!isCompleted) TextButton.icon(
+              onPressed: () async {
+                try {
+                  await _apiService.notifyBreaks(widget.userId);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Break notified!")),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Failed to notify breaks")),
+                  );
+                }
+              },
+              icon: const Icon(Icons.notifications_active),
+              label: Text(
+                'Notify Breaks',
+                style: TextStyle(fontSize: screenWidth * 0.04),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.blue,
+              ),
+            ),
+            SizedBox(height: screenHeight * 0.02),
             Icon(
               isCompleted ? Icons.task_alt : Icons.inbox_outlined,
               size: screenWidth * 0.12,
@@ -796,10 +819,41 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       );
     }
 
-    return ListView.builder(
-      padding: EdgeInsets.all(screenWidth * 0.04),
-      itemCount: tasks.length,
-      itemBuilder: (context, index) => _buildRequestCard(tasks[index], screenWidth, screenHeight),
+    return Column(
+      children: [
+        if (!isCompleted) Padding(
+          padding: EdgeInsets.all(screenWidth * 0.04),
+          child: TextButton.icon(
+            onPressed: () async {
+              try {
+                await _apiService.notifyBreaks(widget.userId);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Break notified!")),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Failed to notify breaks")),
+                );
+              }
+            },
+            icon: const Icon(Icons.notifications_active),
+            label: Text(
+              'Notify Breaks',
+              style: TextStyle(fontSize: screenWidth * 0.04),
+            ),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.blue,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.all(screenWidth * 0.04),
+            itemCount: tasks.length,
+            itemBuilder: (context, index) => _buildRequestCard(tasks[index], screenWidth, screenHeight),
+          ),
+        ),
+      ],
     );
   }
 

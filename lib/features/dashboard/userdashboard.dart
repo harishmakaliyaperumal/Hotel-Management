@@ -11,7 +11,7 @@ class UserDashboard extends StatefulWidget {
   final int floorId;
 
 
-  UserDashboard({
+  const UserDashboard({super.key, 
     required this.userName,
     required this.userId,
     required this.loginResponse,
@@ -141,7 +141,7 @@ class _UserDashboardState extends State<UserDashboard> {
           requestDataCreatedBy: widget.userId,
         );
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Request submitted successfully')),
+          const SnackBar(content: Text('Request submitted successfully')),
         );
         _messageController.clear();
         setState(() {
@@ -149,7 +149,7 @@ class _UserDashboardState extends State<UserDashboard> {
         });
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to submit request')),
+          const SnackBar(content: Text('Failed to submit request')),
         );
       }
     }
@@ -342,12 +342,12 @@ class _UserDashboardState extends State<UserDashboard> {
         widget.userName,
             () {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => LoginPage()),
+            MaterialPageRoute(builder: (context) => const LoginPage()),
           );
         },
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -359,21 +359,21 @@ class _UserDashboardState extends State<UserDashboard> {
               DropdownButtonFormField<int>(
                 decoration: InputDecoration(
                   // labelText: 'Select Task',
-                  labelStyle: TextStyle(color: Colors.white),
+                  labelStyle: const TextStyle(color: Colors.white),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide(color: Color(0xff013457), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xff013457), width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide(color: Color(0xff013457), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xff013457), width: 1.5),
                   ),
                   // filled: true,
                   // fillColor: Color(0xFFC4DAD2),
                 ),
-                style: TextStyle(color: Colors.black),
+                style: const TextStyle(color: Colors.black),
                 value: _selectedTaskId,
-                hint: Text('Select'), // This will show when value is null
+                hint: const Text('Select'), // This will show when value is null
                 items: _tasks.map((task) {
                   return DropdownMenuItem<int>(
                     value: task['taskDataId'] as int,
@@ -393,25 +393,25 @@ class _UserDashboardState extends State<UserDashboard> {
                 },
               ),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Description input
               TextFormField(
                 controller: _messageController,
                 maxLines: 3,
-                style: TextStyle(color: Colors.black),
+                style: const TextStyle(color: Colors.black),
                 decoration: InputDecoration(
                   labelText: 'Description',
-                  labelStyle: TextStyle(color: Colors.black),
+                  labelStyle: const TextStyle(color: Colors.black),
                   // filled: true,
                   // fillColor: Color(0xFFC4DAD2),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide(color: Color(0xff013457), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xff013457), width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: Color(0xff013457), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xff013457), width: 1.5),
                   ),
                   alignLabelWithHint: true,
                 ),
@@ -422,13 +422,13 @@ class _UserDashboardState extends State<UserDashboard> {
                   return null;
                 },
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Submit button
               Center(
                 child: Container(
                   decoration: BoxDecoration(
-                      color: Color(0xff013457),
+                      color: const Color(0xff013457),
                        borderRadius: BorderRadius.circular(8.0), // Rounded corners for the button
                   ),
                   child: ElevatedButton(
@@ -437,7 +437,7 @@ class _UserDashboardState extends State<UserDashboard> {
                       shadowColor: Colors.transparent, // Remove shadow to see gradient clearly
                     ),
                     onPressed: _submitRequest,
-                    child: Text(
+                    child: const Text(
                       'Send Request',
                       style: TextStyle(
                         fontSize: 18,
@@ -449,19 +449,19 @@ class _UserDashboardState extends State<UserDashboard> {
                 ),
               ),
 
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Color(0xff013457), width: 1.5),
+                    border: Border.all(color: const Color(0xff013457), width: 1.5),
                   ),
                   child: Column(
                     children: [
                       // History Header
                       Container(
-                        padding: EdgeInsets.all(5),
-                        decoration: BoxDecoration(
+                        padding: const EdgeInsets.all(5),
+                        decoration: const BoxDecoration(
                           color: Color(0xff013457),
                           borderRadius: BorderRadius.vertical(
                             top: Radius.circular(13),
@@ -470,7 +470,7 @@ class _UserDashboardState extends State<UserDashboard> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
+                            const Text(
                               'Request History',
                               style: TextStyle(
                                 color: Colors.white,
@@ -479,7 +479,7 @@ class _UserDashboardState extends State<UserDashboard> {
                               ),
                             ),
                             IconButton(
-                              icon: Icon(Icons.refresh, color: Colors.white),
+                              icon: const Icon(Icons.refresh, color: Colors.white),
                               onPressed: _loadHistory,
                             ),
                           ],
@@ -488,7 +488,7 @@ class _UserDashboardState extends State<UserDashboard> {
                       // History List
                       Expanded(
                         child: _isHistoryLoading
-                            ? Center(child: CircularProgressIndicator())
+                            ? const Center(child: CircularProgressIndicator())
                             : _history.isEmpty
                             ? Center(
                           child: Text(
@@ -500,12 +500,12 @@ class _UserDashboardState extends State<UserDashboard> {
                           ),
                         )
                             : ListView.builder(
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           itemCount: _history.length,
                           itemBuilder: (context, index) {
                             final item = _history[index];
                             return Card(
-                              margin: EdgeInsets.all(8),
+                              margin: const EdgeInsets.all(8),
                               elevation: 2,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -524,7 +524,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                             scrollDirection: Axis.horizontal,
                                             child: Text(
                                               item['taskName'] ?? 'N/A', // Displaying taskName from API
-                                              style: TextStyle(
+                                              style: const TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                                 color: Color(0xff013457),
@@ -534,7 +534,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                         ),
                                         // Status Container
                                         Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: _getStatusColor(item['jobStatus'] ?? '').withOpacity(0.2),
                                             borderRadius: BorderRadius.circular(8),
@@ -550,7 +550,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 8),
+                                    const SizedBox(height: 8),
 
                                     // Start Time Row
                                     Row(
@@ -562,12 +562,12 @@ class _UserDashboardState extends State<UserDashboard> {
                                         ),
                                         Text(
                                           _formatDate(item['starttime']),
-                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
+                                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
                                         ),
 
                                       ],
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
@@ -577,12 +577,12 @@ class _UserDashboardState extends State<UserDashboard> {
                                         ),
                                         Text(
                                           _formatTime(item['starttime']),
-                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
+                                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
                                         ),
 
                                       ],
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
@@ -592,12 +592,12 @@ class _UserDashboardState extends State<UserDashboard> {
                                         ),
                                         Text(
                                           _formatTime(item['endTime']),
-                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
+                                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
                                         ),
 
                                       ],
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
 
 
 

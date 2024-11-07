@@ -6,13 +6,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
   _LoginPageState createState() => _LoginPageState();
 
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _usernameController = TextEditingController();
+  final _userEmailIdController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscureText = true;
@@ -22,6 +24,7 @@ class _LoginPageState extends State<LoginPage> {
   static const String KEY_JWT = 'jwt';
   static const  KEY_USER_ID = 'userId';
   static const String KEY_USERNAME = 'username';
+  // static const String KEY_USERNAME = '';
   static const String KEY_TOKEN = 'token';
   static const String KEY_USER_TYPE = 'userType';
   static const String KEY_STATUS = 'status';
@@ -55,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
     try {
       final response = await ApiService().login(
-        _usernameController.text,
+        _userEmailIdController.text,
         _passwordController.text,
       );
 
@@ -72,11 +75,9 @@ class _LoginPageState extends State<LoginPage> {
       final  userId = response['id'];
       final roomNo = response['roomNo'];
       final floorId = response['floorId'];
-
-
-      print('User Type: $userType');
-      print('User Name: $userName');
-      print('User Id:$userId');
+      // print('User Type: $userType');
+      // print('User Name: $userName');
+      // print('User Id:$userId');
       // print('User Data: $userDashboardData');
 
       // Navigate based on the userType
@@ -108,10 +109,10 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text("Error"),
+        title: const Text("Error"),
         content: Text(message),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text("OK")),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
         ],
       ),
     );
@@ -133,11 +134,11 @@ class _LoginPageState extends State<LoginPage> {
             alignment: Alignment.center,
             children: [
               Container(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.white,
                       blurRadius: 15,
@@ -148,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
+                    const Text(
                       "WELCOME BACK",
                       style: TextStyle(
                         color: Colors.black,
@@ -156,23 +157,23 @@ class _LoginPageState extends State<LoginPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 30),
+                    const SizedBox(height: 30),
                     TextFormField(
-                      controller: _usernameController,
-                      style: TextStyle(color: Colors.black26),
+                      controller: _userEmailIdController,
+                      style: const TextStyle(color: Colors.black26),
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.supervised_user_circle_outlined, color: Colors.black26),
-                        hintText: "User Name",
-                        hintStyle: TextStyle(color: Colors.black26),
+                        prefixIcon: const Icon(Icons.supervised_user_circle_outlined, color: Colors.black26),
+                        hintText: "UserEmail",
+                        hintStyle: const TextStyle(color: Colors.black26),
                         // filled: true,
                         // fillColor: Colors.black26,
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color(0xff013457), width: 1.5), // Green border when not focused
+                          borderSide: const BorderSide(color: Color(0xff013457), width: 1.5), // Green border when not focused
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color(0xff013457), width: 1.5), // Blue border when focused
+                          borderSide: const BorderSide(color: Color(0xff013457), width: 1.5), // Blue border when focused
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -181,24 +182,24 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                   TextFormField(
                     controller: _passwordController,
                       obscureText: _obscureText,
-                    style: TextStyle(color: Colors.black26),
+                    style: const TextStyle(color: Colors.black26),
                     decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.lock, color: Colors.black26),
+                      prefixIcon: const Icon(Icons.lock, color: Colors.black26),
                       hintText: "Password",
-                      hintStyle: TextStyle(color: Colors.black26),
+                      hintStyle: const TextStyle(color: Colors.black26),
                       // filled: true,
                       // fillColor: Colors.black26,
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Color(0xff013457), width: 1.5), // Green border when not focused
+                        borderSide: const BorderSide(color: Color(0xff013457), width: 1.5), // Green border when not focused
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color:Color(0xff013457), width: 1.5), // Blue border when focused
+                        borderSide: const BorderSide(color:Color(0xff013457), width: 1.5), // Blue border when focused
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -217,9 +218,9 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     _isLoading
-                        ? CircularProgressIndicator(
+                        ? const CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.black26),
                     )
                         : Container(
@@ -227,7 +228,7 @@ class _LoginPageState extends State<LoginPage> {
                       height: 50,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        color: Color(0xff013457)
+                        color: const Color(0xff013457)
                       ),
                       child: ElevatedButton(
                         onPressed: _login,
@@ -238,7 +239,7 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text(
+                        child: const Text(
                           'LOGIN',
                           style: TextStyle(
                             fontSize: 18,

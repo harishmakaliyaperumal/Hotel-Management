@@ -9,7 +9,7 @@ AppBar buildAppBar( BuildContext context,String userName,VoidCallback onLogoutPr
       children: [
         // Add the logo image on the left
         Container(
-          margin: EdgeInsets.only(right: 8.0), // Space between logo and username
+          margin: const EdgeInsets.only(right: 8.0), // Space between logo and username
           child: Image.asset(
             'assets/images/logo.png', // Updated path to match pubspec.yaml
             height: MediaQuery.of(context).size.height * 0.05, // Responsive height
@@ -35,7 +35,7 @@ AppBar buildAppBar( BuildContext context,String userName,VoidCallback onLogoutPr
 
       // Default Logout Icon
       IconButton(
-        icon: Icon(Icons.logout), // Logout icon
+        icon: const Icon(Icons.logout), // Logout icon
         onPressed: onLogoutPressed,
         color: Colors.white,
       ),

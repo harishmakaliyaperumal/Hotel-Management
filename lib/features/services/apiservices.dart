@@ -6,7 +6,7 @@ class ApiService {
   final String baseUrl = 'https://www.hotels.annulartech.net';
 
   // Login functional
-  Future<Map<String, dynamic>> login(String username, String password,) async {
+  Future<Map<String, dynamic>> login(String userEmailId, String password,) async {
     final String loginUrl = '$baseUrl/user/login';
 
     try {
@@ -17,7 +17,7 @@ class ApiService {
         },
         body: jsonEncode(
             {
-              "userName": username,
+              "userEmailId": userEmailId,
               "userPassword": password,
             }
 
@@ -319,8 +319,8 @@ class ApiService {
     );
 
     print('$userId');
-    print('$jobStatus');
-    print('$requestJobHistoryId');
+    print(jobStatus);
+    print(requestJobHistoryId);
     print('Response Body: ${response.body}');
     if (response.statusCode == 200) {
       print("Task updated successfully");
