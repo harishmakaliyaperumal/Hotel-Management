@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:holtelmanagement/Common/app_bar.dart';
 import 'package:holtelmanagement/features/auth/login.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
+import 'package:holtelmanagement/theme/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../classes/language.dart';
+import '../../l10n/app_localizations.dart';
+
+
 
 class UserDashboard extends StatefulWidget {
   final String userName;
@@ -32,6 +39,7 @@ class _UserDashboardState extends State<UserDashboard> {
   bool _isLoading = true; // Loading indicator
   final ApiService _apiService = ApiService();
   List<Map<String, dynamic>> _history = [];
+  Language _selectedLanguage = Language.languageList()[0];
   bool _isHistoryLoading = true;
 
   @override
@@ -40,6 +48,28 @@ class _UserDashboardState extends State<UserDashboard> {
     _loadTasks();
     _loadHistory();
   }
+
+  void _changeLocale(Language language) {
+    setState(() {
+      _selectedLanguage = language;
+      // Add code here if you need to update app's locale based on language selection
+    });
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Clear all saved preferences on logout
+
+    // Reset language or any other settings here if needed
+
+    // Navigate back to the login page
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false, // Remove all previous routes
+    );
+  }
+
 
   Future<void> _loadHistory() async {
     try {
@@ -135,13 +165,17 @@ class _UserDashboardState extends State<UserDashboard> {
           floorId: 1,
           taskId: _selectedTaskId!, // Pass the selected taskDataId
           roomDataId: 1,
-          rname: 'Cleaning Request', // Example data, change as needed
+          rname: 'Cleaning Request',
           requestType: 'Customer Request',
           description: _messageController.text,
           requestDataCreatedBy: widget.userId,
         );
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request submitted successfully')),
+           SnackBar(content:
+          Text(
+            AppLocalizations.of(context).translate('cur_pg_sub_notify_msg'),
+              // 'Request submitted successfully'
+          )),
         );
         _messageController.clear();
         setState(() {
@@ -163,7 +197,7 @@ class _UserDashboardState extends State<UserDashboard> {
         return Colors.green;
       case 'pending':
         return Colors.orange;
-      case 'in progress':
+      case 'inprogress':
         return Colors.blue;
       default:
         return Colors.grey;
@@ -339,13 +373,25 @@ class _UserDashboardState extends State<UserDashboard> {
     return Scaffold(
       appBar: buildAppBar(
         context,
-        widget.userName,
-            () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const LoginPage()),
-          );
-        },
+        _selectedLanguage,
+        _changeLocale,
+        isLoginPage: false,
+        extraActions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () => _logout(), // Call the logout function here
+          ),
+
+        ],
+        //     () {
+        //   Navigator.of(context).pushReplacement(
+        //     MaterialPageRoute(builder: (context) => const LoginPage()),
+        //   );
+        // },
+
+
       ),
+
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -362,18 +408,18 @@ class _UserDashboardState extends State<UserDashboard> {
                   labelStyle: const TextStyle(color: Colors.white),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Color(0xff013457), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xffB5E198), width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Color(0xff013457), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xffB5E198), width: 1.5),
                   ),
                   // filled: true,
                   // fillColor: Color(0xFFC4DAD2),
                 ),
                 style: const TextStyle(color: Colors.black),
                 value: _selectedTaskId,
-                hint: const Text('Select'), // This will show when value is null
+                hint:  Text(AppLocalizations.of(context).translate("cus_pg_form_select"),), // This will show when value is null
                 items: _tasks.map((task) {
                   return DropdownMenuItem<int>(
                     value: task['taskDataId'] as int,
@@ -387,7 +433,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 },
                 validator: (value) {
                   if (value == null) {
-                    return 'Please select a task';
+                    return AppLocalizations.of(context).translate('please_enter_description');;
                   }
                   return null;
                 },
@@ -401,23 +447,24 @@ class _UserDashboardState extends State<UserDashboard> {
                 maxLines: 3,
                 style: const TextStyle(color: Colors.black),
                 decoration: InputDecoration(
-                  labelText: 'Description',
+                  labelText: AppLocalizations.of(context).translate('cus_pg_form_field_des') ,
+                  // labelText: 'Description',
                   labelStyle: const TextStyle(color: Colors.black),
                   // filled: true,
                   // fillColor: Color(0xFFC4DAD2),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Color(0xff013457), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xffB5E198), width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
-                    borderSide: const BorderSide(color: Color(0xff013457), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xffB5E198), width: 1.5),
                   ),
                   alignLabelWithHint: true,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
+                    return AppLocalizations.of(context).translate('cus_req_for_notfill_error_msg');
                   }
                   return null;
                 },
@@ -428,7 +475,7 @@ class _UserDashboardState extends State<UserDashboard> {
               Center(
                 child: Container(
                   decoration: BoxDecoration(
-                      color: const Color(0xff013457),
+                      color: AppColors.backgroundColor,
                        borderRadius: BorderRadius.circular(8.0), // Rounded corners for the button
                   ),
                   child: ElevatedButton(
@@ -437,8 +484,9 @@ class _UserDashboardState extends State<UserDashboard> {
                       shadowColor: Colors.transparent, // Remove shadow to see gradient clearly
                     ),
                     onPressed: _submitRequest,
-                    child: const Text(
-                      'Send Request',
+                    child: Text(
+                      AppLocalizations.of(context).translate('cus_pg_form_field_butt'),
+                      // 'Send Request',
                       style: TextStyle(
                         fontSize: 18,
                         color: Colors.white,
@@ -454,7 +502,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: const Color(0xff013457), width: 1.5),
+                    border: Border.all(color: AppColors.backgroundColor, width: 1.5),
                   ),
                   child: Column(
                     children: [
@@ -462,7 +510,7 @@ class _UserDashboardState extends State<UserDashboard> {
                       Container(
                         padding: const EdgeInsets.all(5),
                         decoration: const BoxDecoration(
-                          color: Color(0xff013457),
+                          color:AppColors.backgroundColor,
                           borderRadius: BorderRadius.vertical(
                             top: Radius.circular(13),
                           ),
@@ -470,8 +518,9 @@ class _UserDashboardState extends State<UserDashboard> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Request History',
+                             Text(
+                               AppLocalizations.of(context).translate('cus_pg_req_his_htext'),
+                              // 'Request History',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -492,7 +541,8 @@ class _UserDashboardState extends State<UserDashboard> {
                             : _history.isEmpty
                             ? Center(
                           child: Text(
-                            'No request history available',
+                            AppLocalizations.of(context).translate('cus_pg_req_his_nohis_htext'),
+                            // 'No request history available',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey[600],
@@ -540,7 +590,8 @@ class _UserDashboardState extends State<UserDashboard> {
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Text(
-                                            item['jobStatus'] ?? 'N/A',
+                                            // Translate jobStatus, falling back to 'N/A' if translation or status is missing
+                                            AppLocalizations.of(context).translate(item['jobStatus']?.toLowerCase() ?? '') ?? 'N/A',
                                             style: TextStyle(
                                               color: _getStatusColor(item['jobStatus'] ?? ''),
                                               fontWeight: FontWeight.bold,
@@ -548,6 +599,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                             ),
                                           ),
                                         ),
+
                                       ],
                                     ),
                                     const SizedBox(height: 8),
@@ -557,7 +609,8 @@ class _UserDashboardState extends State<UserDashboard> {
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Date: ',  // Label
+                                          AppLocalizations.of(context).translate('cus_pg_req_his_card_date'),
+                                          // 'Date: ',  // Label
                                           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                         ),
                                         Text(
@@ -572,7 +625,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Start Time: ',  // Label
+                                          AppLocalizations.of(context).translate('cus_req_his_card_st_label'),
                                           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                         ),
                                         Text(
@@ -587,7 +640,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'End Time: ',  // Label
+                                          AppLocalizations.of(context).translate('cus_req_his_card_et_label'),
                                           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                         ),
                                         Text(

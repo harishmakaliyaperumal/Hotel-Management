@@ -5,10 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:holtelmanagement/features/auth/login.dart';
 import 'package:holtelmanagement/features/dashboard/serdash/breakhistory.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
+import 'package:holtelmanagement/theme/colors.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swipeable_button_view/swipeable_button_view.dart';
 import '../../Common/app_bar.dart';
+import '../../classes/language.dart';
+import '../../l10n/app_localizations.dart';
 
 class ServicesDashboard extends StatefulWidget {
   final int userId;
@@ -40,8 +44,10 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   List<Map<String, dynamic>> _filteredCompletedRequests = [];
   DateTime? _lastNotificationTime;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  Language _selectedLanguage = Language.languageList()[0];
   int _currentStatusIndex = 0; // Index for tracking current status
   final List<String> _statuses = [
+    'Requested'
     'Accepted',
     'In Progress',
     'Door Checking',
@@ -65,6 +71,28 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         _filterCompletedTasks();
       }
     });
+  }
+
+  void _changeLocale(Language language) {
+    setState(() {
+      _selectedLanguage = language;
+      // Add code here if you need to update app's locale based on language selection
+    });
+  }
+
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Clear all saved preferences on logout
+
+    // Reset language or any other settings here if needed
+
+    // Navigate back to the login page
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => true, // Remove all previous routes
+    );
   }
 
 
@@ -104,7 +132,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xff013457),
+              primary: Color(0xff2A6E75),
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
@@ -287,7 +315,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        backgroundColor: isError ? Colors.red : AppColors.backgroundColor,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -381,7 +409,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       });
 
       if (_jobStatus && _availableRequests.isEmpty) {
-        _showSnackBar('No tasks available at the moment');
+        _showSnackBar(AppLocalizations.of(context).translate('ser_pg_notify_no_tasks'));
       }
     } catch (e) {
       print('Error fetching requests: $e');
@@ -408,7 +436,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isCompleted ? Colors.green.withOpacity(0.5) : Colors.blue.withOpacity(0.5),
+          color: isCompleted ? Colors.green.withOpacity(0.5) : Color(0xFF2A6E75).withOpacity(0.5),
           width: 1,
         ),
       ),
@@ -422,7 +450,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
               children: [
                 Expanded(
                   child: Text(
-                    'Name: ${request['userName'] ?? 'N/A'}',
+                  '${AppLocalizations.of(context).translate('ser_pg_history_text_name')}: ${request['userName'] ?? 'N/A'}',
                     style: TextStyle(
                       fontSize: screenWidth * 0.04,
                       fontWeight: FontWeight.bold,
@@ -436,13 +464,16 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    request['jobStatus'] ?? 'N/A',
+                    AppLocalizations.of(context).translate(
+                        request['jobStatus']?.toLowerCase()?.replaceAll(' ', '_') ?? 'unknown_status'
+                    ),
                     style: TextStyle(
-                      color: isCompleted ? Colors.green : Colors.blue,
+                      color: isCompleted ? Colors.green : Color(0xFF2A6E75),
                       fontSize: screenWidth * 0.035,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+
                 ),
               ],
             ),
@@ -450,7 +481,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Completed: ${DateFormat('MMM dd, yyyy hh:mm a').format(DateTime.parse(request['completedAt']))}',
+                  '${AppLocalizations.of(context).translate('ser_pg_history_text_completed')}: ${DateFormat('MMM dd, yyyy hh:mm a').format(DateTime.parse(request['completedAt']))}',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: screenWidth * 0.035,
@@ -458,9 +489,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                 ),
               ),
             Divider(height: screenHeight * 0.02),
-            _buildInfoRow('Request', request['taskName'] ?? 'N/A', screenWidth),
-            _buildInfoRow('Location', request['roomId'] ?? 'N/A', screenWidth),
-            _buildInfoRow('Description', request['Description'] ?? 'N/A', screenWidth),
+            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_com_his_text_request'), request['taskName'] ?? 'N/A', screenWidth),
+            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_location'),request['roomId'] ?? 'N/A', screenWidth),
+            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_description'), request['Description'] ?? 'N/A', screenWidth),
             if (!isCompleted) ...[
               SizedBox(height: screenHeight * 0.015),
               SwipeableButtonView(
@@ -479,7 +510,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                     await _updateJobStatus();
                   }
                 },
-                activeColor: const Color(0xff013457),
+                activeColor: const Color(0xff2A6E75),
                 isFinished: isfinished,
                 onFinish: () {
                   setState(() {
@@ -498,7 +529,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   // Swipeable button that updates status
   Widget _buildSwipeButton() {
     return SwipeableButtonView(
-      buttonText: "Swipe to Update Status",
+      buttonText: AppLocalizations.of(context).translate('swipe_to_update_status'),
       buttonWidget: Container(
         child: const Icon(
           Icons.arrow_back_ios_new_sharp,
@@ -516,7 +547,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
           isfinished = true; // Indicate that the swipe action is finished
         });
       },
-      activeColor: const Color(0xff013457),
+      activeColor: const Color(0xff2A6E75),
       isFinished: isfinished,
       onFinish: () {
         // Reset the finished state to allow for the next swipe
@@ -579,16 +610,19 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
             children: [
               buildAppBar(
                 context,
-                widget.userName,
-                    () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  );
-                },
-                extraActions: [
+                _selectedLanguage,     // Correct parameter type: Language object
+                _changeLocale,
+
+
+                 extraActions: [
+                  IconButton(
+                    icon: Icon(Icons.logout),
+                    onPressed: () => _logout(), // Call the logout function here
+                  ),
+
                   IconButton(
                     icon: const Icon(
-                        Icons.free_breakfast_rounded, color: Colors.white),
+                        Icons.free_breakfast_rounded, color: Colors.black),
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -598,29 +632,35 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                       );
                     },
                   ),
-                  _isLoading
-                      ? const SizedBox(
-                    width: 50,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  )
-                      : Switch(
-                    value: _jobStatus,
-                    onChanged: _toggleJobStatus,
-                    activeColor: Colors.blue,
-                    inactiveThumbColor: Colors.red,
-                    inactiveTrackColor: Colors.grey,
-                  ),
-                ],
+                  // _isLoading
+                  //     ? const SizedBox(
+                  //   width: 50,
+                  //   child: Center(
+                  //     child: CircularProgressIndicator(
+                  //       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  //       strokeWidth: 2,
+                  //     ),
+                  //   ),
+                  // )
+                  //     : Switch(
+                  //   value: _jobStatus,
+                  //   onChanged: _toggleJobStatus,
+                  //   activeColor: Colors.blue,
+                  //   inactiveThumbColor: Colors.red,
+                  //   inactiveTrackColor: Colors.grey,
+                  // ),
+                ], isLoginPage: false,
               ),
               Container(
-                color: const Color(0xff013457),
+                color: AppColors.whiteColor,
                 child: TabBar(
                   controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: AppColors.backgroundColor, // Color of the active tab background
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  labelColor: Colors.white, // Text color for the active tab
+                  unselectedLabelColor: Colors.black,
                   tabs: [
                     Tab(
                       child: Row(
@@ -628,7 +668,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                         children: [
                           const Icon(Icons.pending_actions),
                           const SizedBox(width: 8),
-                          Text('Available (${_availableRequests.length})'),
+                          Text(
+                            '${AppLocalizations.of(context).translate('ser_pg_tap_text_available')} (${_availableRequests.length})',
+                          ),
                         ],
                       ),
                     ),
@@ -638,14 +680,17 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                         children: [
                           const Icon(Icons.task_alt),
                           const SizedBox(width: 8),
-                          Text('Completed (${_completedRequests.length})'),
+                          Text(
+                            '${AppLocalizations.of(context).translate('ser_pg_tap_text_completed')} (${_completedRequests.length})',
+                          ),
+
                         ],
                       ),
                     ),
                   ],
-                  indicatorColor: Colors.white,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white70,
+                  // indicatorColor: Colors.white,
+                  // labelColor: Colors.white,
+                  // unselectedLabelColor: Colors.white70,
                 ),
               ),
             ],
@@ -736,7 +781,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
             style: TextStyle(
               fontSize: screenWidth * 0.04,
               fontWeight: FontWeight.w500,
-              color: const Color(0xff013457),
+              color: const Color(0xFF2A6E75),
             ),
           ),
           Row(
@@ -755,7 +800,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
               IconButton(
                 icon: const Icon(
                   Icons.calendar_month,
-                  color: Color(0xff013457),
+                  color: Color(0xFF2A6E75),
                 ),
                 onPressed: _showDatePicker,
                 tooltip: 'Select date',
@@ -778,21 +823,21 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                 try {
                   await _apiService.notifyBreaks(widget.userId);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Break notified!")),
+                    const SnackBar(content: Text("breaknotified!")),
                   );
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Failed to notify breaks")),
+                    const SnackBar(content: Text("failedtonotifybreaks")),
                   );
                 }
               },
               icon: const Icon(Icons.notifications_active),
               label: Text(
-                'Notify Breaks',
+                AppLocalizations.of(context).translate('ser_pg_link_notify_breaks'),
                 style: TextStyle(fontSize: screenWidth * 0.04),
               ),
               style: TextButton.styleFrom(
-                foregroundColor: Colors.blue,
+                foregroundColor: Colors.black26,
               ),
             ),
             SizedBox(height: screenHeight * 0.02),
@@ -801,16 +846,16 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
               size: screenWidth * 0.12,
               color: Colors.grey[400],
             ),
-            SizedBox(height: screenHeight * 0.02),
+            SizedBox(height: screenHeight * 0.04),
             Text(
               isCompleted
                   ? _selectedDate != null
-                  ? 'No completed tasks on ${DateFormat('MMM dd, yyyy').format(_selectedDate!)}'
-                  : 'No completed tasks'
-                  : 'No available requests at the moment',
+                  ? '${AppLocalizations.of(context).translate('ser_pg_notify_no_completed_tasks_on')} ${DateFormat('MMM dd, yyyy').format(_selectedDate!)}'
+                  :  AppLocalizations.of(context).translate('ser_pg_notify_no_completed_tasks')
+                  : AppLocalizations.of(context).translate('ser_pg_notify_no_available_requests'),
               style: TextStyle(
                 fontSize: screenWidth * 0.045,
-                color: Colors.grey[600],
+                color: Colors.black26,
               ),
               textAlign: TextAlign.center,
             ),
@@ -828,21 +873,21 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
               try {
                 await _apiService.notifyBreaks(widget.userId);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Break notified!")),
+                   SnackBar(content: Text(AppLocalizations.of(context).translate('ser_pg_notify_break_notified'))),
                 );
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Failed to notify breaks")),
+                   SnackBar(content: Text(AppLocalizations.of(context).translate('ser_pg_notify_failed_to_notify_breaks'))),
                 );
               }
             },
             icon: const Icon(Icons.notifications_active),
             label: Text(
-              'Notify Breaks',
-              style: TextStyle(fontSize: screenWidth * 0.04),
+              AppLocalizations.of(context).translate('ser_pg_link_notify_breaks'),
+              style: TextStyle(fontSize: screenWidth * 0.02),
             ),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.blue,
+              foregroundColor: Colors.black26,
             ),
           ),
         ),

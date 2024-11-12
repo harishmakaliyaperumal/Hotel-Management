@@ -4,13 +4,16 @@ import 'package:holtelmanagement/features/dashboard/userdashboard.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../Common/app_bar.dart';
+import '../../classes/language.dart';
+import '../../l10n/app_localizations.dart';
+import '../../theme/colors.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
   _LoginPageState createState() => _LoginPageState();
-
 }
 
 class _LoginPageState extends State<LoginPage> {
@@ -22,15 +25,13 @@ class _LoginPageState extends State<LoginPage> {
 
   // Keys for SharedPreferences
   static const String KEY_JWT = 'jwt';
-  static const  KEY_USER_ID = 'userId';
+  static const String KEY_USER_ID = 'userId';
   static const String KEY_USERNAME = 'username';
-  // static const String KEY_USERNAME = '';
   static const String KEY_TOKEN = 'token';
   static const String KEY_USER_TYPE = 'userType';
   static const String KEY_STATUS = 'status';
-  static const String KEY_roomNo = 'roomNo';
-  static const String KEY_floorId = 'floorId';
-
+  static const String KEY_ROOM_NO = 'roomNo';
+  static const String KEY_FLOOR_ID = 'floorId';
 
   Future<void> _saveLoginData(Map<String, dynamic> response) async {
     final prefs = await SharedPreferences.getInstance();
@@ -40,19 +41,42 @@ class _LoginPageState extends State<LoginPage> {
     await prefs.setString(KEY_TOKEN, response['token']);
     await prefs.setString(KEY_USER_TYPE, response['userType']);
     await prefs.setInt(KEY_STATUS, response['status']);
-    // await prefs.setInt(KEY_roomNo, response['roomNo']);
-    // await prefs.setInt(KEY_floorId, response['floorId']);
-
     if (response['roomNo'] != null) {
-      await prefs.setInt(KEY_roomNo, response['roomNo']);
+      await prefs.setInt(KEY_ROOM_NO, response['roomNo']);
     }
     if (response['floorId'] != null) {
-      await prefs.setInt(KEY_floorId, response['floorId']);
+      await prefs.setInt(KEY_FLOOR_ID, response['floorId']);
     }
+  }
 
+  @override
+  void initState() {
+
+    super.initState();
+    _loadSavedLanguage();
+  }
+  Language _selectedLanguage = Language.languageList().first;
+
+  Future<void> _loadSavedLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLanguageCode = prefs.getString('language_code') ?? 'en';
+
+    setState(() {
+      _selectedLanguage = Language.languageList().firstWhere(
+            (lang) => lang.languageCode == savedLanguageCode,
+        orElse: () => Language.languageList().first,
+      );
+    });
   }
 
 
+
+  // Function to handle language change
+  void onLanguageChange(Language newLanguage) {
+    setState(() {
+      _selectedLanguage = newLanguage;
+    });
+  }
 
   Future<void> _login() async {
     setState(() => _isLoading = true);
@@ -67,33 +91,22 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Save response data to SharedPreferences
       await _saveLoginData(response);
 
-      final  userType = response['userType'];
-      final  userName = response['username'];
-      final  userId = response['id'];
+      final userType = response['userType'];
+      final userName = response['username'];
+      final userId = response['id'];
       final roomNo = response['roomNo'];
       final floorId = response['floorId'];
-      // print('User Type: $userType');
-      // print('User Name: $userName');
-      // print('User Id:$userId');
-      // print('User Data: $userDashboardData');
 
-      // Navigate based on the userType
       if (userType == 'CUSTOMER') {
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) =>UserDashboard(userName: userName,
-          userId: userId,floorId:floorId,roomNo: roomNo,
-          loginResponse: response,)));
+            context, MaterialPageRoute(builder: (_) => UserDashboard(
+            userName: userName, userId: userId, floorId: floorId, roomNo: roomNo, loginResponse: response)));
       } else if (userType == 'SERVICE') {
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) =>ServicesDashboard(
-          userId: userId,
-          userName: userName,
-          roomNo: roomNo.toString(),   // Convert int to String if roomNo is an int
-          floorId: floorId.toString(),
-        )));
+            context, MaterialPageRoute(builder: (_) => ServicesDashboard(
+            userId: userId, userName: userName, roomNo: roomNo.toString(), floorId: floorId.toString())));
       } else {
         _showError("Unknown user type");
       }
@@ -121,140 +134,130 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.white,
-                      blurRadius: 15,
-                      offset: Offset(2, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      "WELCOME BACK",
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    TextFormField(
-                      controller: _userEmailIdController,
-                      style: const TextStyle(color: Colors.black26),
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.supervised_user_circle_outlined, color: Colors.black26),
-                        hintText: "UserEmail",
-                        hintStyle: const TextStyle(color: Colors.black26),
-                        // filled: true,
-                        // fillColor: Colors.black26,
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xff013457), width: 1.5), // Green border when not focused
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xff013457), width: 1.5), // Blue border when focused
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                          // borderColor:Colors.greenAccent,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _passwordController,
-                      obscureText: _obscureText,
-                    style: const TextStyle(color: Colors.black26),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.lock, color: Colors.black26),
-                      hintText: "Password",
-                      hintStyle: const TextStyle(color: Colors.black26),
-                      // filled: true,
-                      // fillColor: Colors.black26,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xff013457), width: 1.5), // Green border when not focused
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color:Color(0xff013457), width: 1.5), // Blue border when focused
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureText ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.black26,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureText = !_obscureText;
-                          });
-                        },
+      backgroundColor:AppColors.backgroundColor,
+      // appBar: buildAppBar(
+      //   context,
+      //   _selectedLanguage,
+      //   onLanguageChange,
+      //   isLoginPage: true,
+      //   extraActions: [],
+      // ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            top: 30,
+            child: Column(
+              children: [
+                Center(
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: const BoxDecoration(
+                      color: AppColors.whiteColor,
+                      shape: BoxShape.circle,
+                      image: DecorationImage(
+                        image: AssetImage('assets/images/logo.png'),
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
+                ),
+                const SizedBox(height: 20),
+                const Text('INN-SERV', style: TextStyle(color: AppColors.whiteColor, fontSize: 26)),
+                const Text('HOTEL MANAGEMENT', style: TextStyle(color: AppColors.whiteColor, fontSize: 10)),
+                const SizedBox(height: 20),
+                Text(
+                  AppLocalizations.of(context).translate('loing_pg_text_welcome'),
+                  style: const TextStyle(color: AppColors.whiteColor, fontSize: 23, fontWeight: FontWeight.bold),
+                ),
+
+              ],
+            ),
+
+          ),
+
+          Positioned(
+            top: 290,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(30),
+              decoration: const BoxDecoration(
+                color: AppColors.whiteColor,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context).translate('loing_pg_htext_login'),
+                      textAlign: TextAlign.left,
+                      style: const TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _userEmailIdController,
+                      style: const TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.supervised_user_circle_outlined, color: Colors.black),
+                        hintText: AppLocalizations.of(context).translate('login_pg_form_filed_userEmailId'),
+                        hintStyle: const TextStyle(color: Colors.black),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: AppColors.backgroundColor, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscureText,
+                      style: const TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.lock, color: Colors.black),
+                        hintText: AppLocalizations.of(context).translate('login_pg_form_filed_userPassword'),
+                        hintStyle: const TextStyle(color: Colors.black),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: AppColors.backgroundColor, width: 1.5),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off, color: Colors.black),
+                          onPressed: () => setState(() => _obscureText = !_obscureText),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
                     _isLoading
-                        ? const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black26),
-                    )
+                        ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.textColor))
                         : Container(
                       width: double.infinity,
                       height: 50,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        color: const Color(0xff013457)
+                        color: AppColors.backgroundColor,
                       ),
                       child: ElevatedButton(
                         onPressed: _login,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text(
-                          'LOGIN',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Text(
+                          AppLocalizations.of(context).translate('login_pg_form_filed_button_login'),
+                          style: const TextStyle(fontSize: 18, color: AppColors.whiteColor, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
 import 'package:intl/intl.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 class BreakHistory extends StatefulWidget {
   final int userId;
 
@@ -80,7 +82,7 @@ class _BreakHistoryState extends State<BreakHistory> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Break History'),
+        title:  Text(AppLocalizations.of(context).translate("br_his_text_break_history"),),
         backgroundColor:const Color(0xff013457),
       ),
       body: RefreshIndicator(
@@ -92,9 +94,10 @@ class _BreakHistoryState extends State<BreakHistory> {
               : errorMessage != null
               ? Center(child: Text('Error: $errorMessage'))
               : breakData.isEmpty
-              ? const Center(
+              ?  Center(
             child: Text(
-              'No break history available',
+              AppLocalizations.of(context).translate("br_his_text_break_history"),
+              // 'No break history available',
               style: TextStyle(fontSize: 16),
             ),
           )
@@ -102,22 +105,37 @@ class _BreakHistoryState extends State<BreakHistory> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Break History - User ID: ${widget.userId}',
+                AppLocalizations.of(context).translate("br_his_text_break_history"),
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              // Text(
+              //   'Break History - User ID: ${widget.userId}',
+              //   style: const TextStyle(
+              //     fontSize: 20,
+              //     fontWeight: FontWeight.bold,
+              //   ),
+              // ),
               const SizedBox(height: 20),
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Date')),
-                      DataColumn(label: Text('Start Time')),
-                      DataColumn(label: Text('End Time')),
-                      DataColumn(label: Text('Status')),
+                    columns:  [
+                      DataColumn(
+                        label: Text(AppLocalizations.of(context).translate('date') ?? 'Date'),
+                      ),
+                      DataColumn(
+                        label: Text(AppLocalizations.of(context).translate('start_time') ?? 'Start Time'),
+                      ),
+                      DataColumn(
+                        label: Text(AppLocalizations.of(context).translate('end_time') ?? 'End Time'),
+                      ),
+                      DataColumn(
+                        label: Text(AppLocalizations.of(context).translate('status') ?? 'Status'),
+                      ),
                     ],
                     rows: breakData.map((breakItem) {
                       return DataRow(cells: [
