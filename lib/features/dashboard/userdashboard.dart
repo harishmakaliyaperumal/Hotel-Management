@@ -16,6 +16,7 @@ class UserDashboard extends StatefulWidget {
   final Map<String, dynamic> loginResponse;
   final int roomNo;
   final int floorId;
+  final String rname;
 
 
   const UserDashboard({super.key, 
@@ -24,8 +25,11 @@ class UserDashboard extends StatefulWidget {
     required this.loginResponse,
     required this.roomNo,
     required this.floorId,
+    required this.rname
 
   });
+
+
 
   @override
   _UserDashboardState createState() => _UserDashboardState();
@@ -56,19 +60,7 @@ class _UserDashboardState extends State<UserDashboard> {
     });
   }
 
-  Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Clear all saved preferences on logout
 
-    // Reset language or any other settings here if needed
-
-    // Navigate back to the login page
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-          (route) => false, // Remove all previous routes
-    );
-  }
 
 
   Future<void> _loadHistory() async {
@@ -165,7 +157,7 @@ class _UserDashboardState extends State<UserDashboard> {
           floorId: 1,
           taskId: _selectedTaskId!, // Pass the selected taskDataId
           roomDataId: 1,
-          rname: 'Cleaning Request',
+          rname: widget.userName,
           requestType: 'Customer Request',
           description: _messageController.text,
           requestDataCreatedBy: widget.userId,
@@ -204,191 +196,22 @@ class _UserDashboardState extends State<UserDashboard> {
     }
   }
 
-  // Widget _buildHistoryCard() {
-  //   if (_isHistoryLoading) {
-  //     return Center(child: CircularProgressIndicator());
-  //   }
-  //
-  //   if (_history.isEmpty) {
-  //     return Card(
-  //       elevation: 4,
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(15),
-  //         side: BorderSide(color: Color(0xff013457), width: 1.5),
-  //       ),
-  //       child: Padding(
-  //         padding: EdgeInsets.all(16),
-  //         child: Center(
-  //           child: Text(
-  //             'No request history available',
-  //             style: TextStyle(
-  //               fontSize: 16,
-  //               color: Colors.grey[600],
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     );
-  //   }
-  //
-  //   return Column(
-  //     children: [
-  //       Container(
-  //         padding: EdgeInsets.all(16),
-  //         decoration: BoxDecoration(
-  //           color: Color(0xff013457),
-  //           borderRadius: BorderRadius.circular(15),
-  //         ),
-  //         child: Row(
-  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //           children: [
-  //             Text(
-  //               'Request History',
-  //               style: TextStyle(
-  //                 color: Colors.white,
-  //                 fontSize: 18,
-  //                 fontWeight: FontWeight.bold,
-  //               ),
-  //             ),
-  //             IconButton(
-  //               icon: Icon(Icons.refresh, color: Colors.white),
-  //               onPressed: _loadHistory,
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //       SizedBox(height: 10),
-  //       Expanded(
-  //         child: ListView.builder(
-  //           itemCount: _history.length,
-  //           itemBuilder: (context, index) {
-  //             final item = _history[index];
-  //             return Card(
-  //               margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-  //               elevation: 4,
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(15),
-  //                 side: BorderSide(color: Color(0xff013457), width: 1),
-  //               ),
-  //               child: Padding(
-  //                 padding: EdgeInsets.all(16),
-  //                 child: Column(
-  //                   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   children: [
-  //                     Row(
-  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                       children: [
-  //                         Expanded(
-  //                           child: Text(
-  //                             item['taskName'] ?? 'N/A',
-  //                             style: TextStyle(
-  //                               fontSize: 18,
-  //                               fontWeight: FontWeight.bold,
-  //                               color: Color(0xff013457),
-  //                             ),
-  //                           ),
-  //                         ),
-  //                         Container(
-  //                           padding: EdgeInsets.symmetric(
-  //                             horizontal: 12,
-  //                             vertical: 6,
-  //                           ),
-  //                           decoration: BoxDecoration(
-  //                             color: _getStatusColor(item['jobStatus'] ?? '')
-  //                                 .withOpacity(0.2),
-  //                             borderRadius: BorderRadius.circular(12),
-  //                           ),
-  //                           child: Text(
-  //                             item['jobStatus'] ?? 'N/A',
-  //                             style: TextStyle(
-  //                               color: _getStatusColor(item['jobStatus'] ?? ''),
-  //                               fontWeight: FontWeight.bold,
-  //                             ),
-  //                           ),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                     SizedBox(height: 12),
-  //                     Row(
-  //                       children: [
-  //                         Icon(Icons.calendar_today,
-  //                             size: 16, color: Colors.grey),
-  //                         SizedBox(width: 8),
-  //                         Text(
-  //                           'Start: ${_formatDate(item['starttime'])}',
-  //                           style: TextStyle(color: Colors.grey[700]),
-  //                         ),
-  //                         SizedBox(width: 16),
-  //                         Icon(Icons.access_time, size: 16, color: Colors.grey),
-  //                         SizedBox(width: 8),
-  //                         Text(
-  //                           _formatTime(item['starttime']),
-  //                           style: TextStyle(color: Colors.grey[700]),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                     SizedBox(height: 8),
-  //                     Row(
-  //                       children: [
-  //                         Icon(Icons.calendar_today,
-  //                             size: 16, color: Colors.grey),
-  //                         SizedBox(width: 8),
-  //                         Text(
-  //                           'End: ${_formatDate(item['endTime'])}',
-  //                           style: TextStyle(color: Colors.grey[700]),
-  //                         ),
-  //                         SizedBox(width: 16),
-  //                         Icon(Icons.access_time, size: 16, color: Colors.grey),
-  //                         SizedBox(width: 8),
-  //                         Text(
-  //                           _formatTime(item['endTime']),
-  //                           style: TextStyle(color: Colors.grey[700]),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                     if (item['description'] != null &&
-  //                         item['description'].toString().isNotEmpty) ...[
-  //                       SizedBox(height: 12),
-  //                       Text(
-  //                         item['description'],
-  //                         style: TextStyle(
-  //                           color: Colors.grey[600],
-  //                           fontSize: 14,
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ],
-  //                 ),
-  //               ),
-  //             );
-  //           },
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: buildAppBar(
-        context,
-        _selectedLanguage,
-        _changeLocale,
+        context: context,
+        onLanguageChange: (Language newLanguage) {
+          // Handle language change
+        },
         isLoginPage: false,
-        extraActions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () => _logout(), // Call the logout function here
-          ),
+        extraActions: [],
+        dashboardType: DashboardType.user,
+        onLogout: () {
 
-        ],
-        //     () {
-        //   Navigator.of(context).pushReplacement(
-        //     MaterialPageRoute(builder: (context) => const LoginPage()),
-        //   );
-        // },
+            logOut(context);
 
+        },apiService: _apiService,
 
       ),
 
@@ -433,7 +256,7 @@ class _UserDashboardState extends State<UserDashboard> {
                 },
                 validator: (value) {
                   if (value == null) {
-                    return AppLocalizations.of(context).translate('please_enter_description');;
+                    return AppLocalizations.of(context).translate('please_select');
                   }
                   return null;
                 },

@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
 import 'package:intl/intl.dart';
 
+import '../../../Common/app_bar.dart';
+import '../../../classes/language.dart';
 import '../../../l10n/app_localizations.dart';
 
 class BreakHistory extends StatefulWidget {
   final int userId;
+
 
   const BreakHistory({super.key, required this.userId});
 
@@ -18,6 +21,7 @@ class _BreakHistoryState extends State<BreakHistory> {
   bool isLoading = true;
   String? errorMessage;
   final ApiService breakService = ApiService();
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -80,10 +84,19 @@ class _BreakHistoryState extends State<BreakHistory> {
 
   @override
   Widget build(BuildContext context) {
+    // final int userId = userId;
     return Scaffold(
-      appBar: AppBar(
-        title:  Text(AppLocalizations.of(context).translate("br_his_text_break_history"),),
-        backgroundColor:const Color(0xff013457),
+      appBar:  buildAppBar(
+        context: context,
+        onLanguageChange: (Language newLanguage) {
+          // Handle language change
+        },
+        isLoginPage: false,
+        extraActions: [], dashboardType: DashboardType.other,
+        onLogout: () {
+          logOut(context);
+        },  apiService: _apiService,
+
       ),
       body: RefreshIndicator(
         onRefresh: fetchBreakHistory,
@@ -125,16 +138,16 @@ class _BreakHistoryState extends State<BreakHistory> {
                   child: DataTable(
                     columns:  [
                       DataColumn(
-                        label: Text(AppLocalizations.of(context).translate('date') ?? 'Date'),
+                        label: Text(AppLocalizations.of(context).translate('br_his_tab_date') ?? 'Date'),
                       ),
                       DataColumn(
-                        label: Text(AppLocalizations.of(context).translate('start_time') ?? 'Start Time'),
+                        label: Text(AppLocalizations.of(context).translate('br_his_tab_start_time') ?? 'Start Time'),
                       ),
                       DataColumn(
-                        label: Text(AppLocalizations.of(context).translate('end_time') ?? 'End Time'),
+                        label: Text(AppLocalizations.of(context).translate('br_his_tab_end_time') ?? 'End Time'),
                       ),
                       DataColumn(
-                        label: Text(AppLocalizations.of(context).translate('status') ?? 'Status'),
+                        label: Text(AppLocalizations.of(context).translate('br_his_tab_status') ?? 'Status'),
                       ),
                     ],
                     rows: breakData.map((breakItem) {

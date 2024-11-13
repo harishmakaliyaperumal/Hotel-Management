@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:holtelmanagement/features/dashboard/servicedashboard.dart';
 import 'package:holtelmanagement/features/dashboard/userdashboard.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Common/app_bar.dart';
+import '../../classes/ LanguageProvider.dart';
 import '../../classes/language.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/colors.dart';
@@ -21,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscureText = true;
+  final ApiService _apiService = ApiService();
 
 
   // Keys for SharedPreferences
@@ -51,10 +54,13 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void initState() {
-
     super.initState();
-    _loadSavedLanguage();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<LanguageProvider>(context, listen: false).initLanguage();
+    });
   }
+
+
   Language _selectedLanguage = Language.languageList().first;
 
   Future<void> _loadSavedLanguage() async {
@@ -72,10 +78,9 @@ class _LoginPageState extends State<LoginPage> {
 
 
   // Function to handle language change
-  void onLanguageChange(Language newLanguage) {
-    setState(() {
-      _selectedLanguage = newLanguage;
-    });
+  void onLanguageChange(Language newLanguage) async {
+    await Provider.of<LanguageProvider>(context, listen: false)
+        .changeLanguage(newLanguage);
   }
 
   Future<void> _login() async {
@@ -102,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
       if (userType == 'CUSTOMER') {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) => UserDashboard(
-            userName: userName, userId: userId, floorId: floorId, roomNo: roomNo, loginResponse: response)));
+            userName: userName, userId: userId, floorId: floorId, roomNo: roomNo, rname:userName,loginResponse: response)));
       } else if (userType == 'SERVICE') {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) => ServicesDashboard(
@@ -135,14 +140,18 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:AppColors.backgroundColor,
-      // appBar: buildAppBar(
-      //   context,
-      //   _selectedLanguage,
-      //   onLanguageChange,
-      //   isLoginPage: true,
-      //   extraActions: [],
-      // ),
-      body: Stack(
+      appBar:  buildAppBar(
+        context: context,
+        onLanguageChange: (Language newLanguage) {
+      // Handle language change
+    },
+    isLoginPage: true,
+    extraActions: [], dashboardType: DashboardType.other,
+    onLogout: () {
+      logOut(context);
+    },apiService: _apiService,
+      ),
+    body: Stack(
         children: [
           Positioned.fill(
             top: 30,

@@ -20,6 +20,7 @@ class ServicesDashboard extends StatefulWidget {
   final String? roomNo;
   final String? floorId;
 
+
   const ServicesDashboard({super.key, 
     required this.userId,
     required this.userName,
@@ -31,6 +32,7 @@ class ServicesDashboard extends StatefulWidget {
   _ServicesDashboardState createState() => _ServicesDashboardState();
 }
 class _ServicesDashboardState extends State<ServicesDashboard> with SingleTickerProviderStateMixin {
+  // final int userId = widget.userId;
   bool _jobStatus = true;
   List<Map<String, dynamic>> _generalRequests = [];
   final ApiService _apiService = ApiService();
@@ -47,7 +49,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   Language _selectedLanguage = Language.languageList()[0];
   int _currentStatusIndex = 0; // Index for tracking current status
   final List<String> _statuses = [
-    'Requested'
     'Accepted',
     'In Progress',
     'Door Checking',
@@ -55,6 +56,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     'Completed'
   ];
   Timer? _autoRefreshTimer;
+
 
   @override
   void initState() {
@@ -67,7 +69,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     _startAutoRefresh();
 
     _tabController.addListener(() {
-      if (_tabController.index == 1) { // Completed tasks tab
+      if (_tabController.index == 0) { // Completed tasks tab
         _filterCompletedTasks();
       }
     });
@@ -81,19 +83,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-  Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Clear all saved preferences on logout
 
-    // Reset language or any other settings here if needed
-
-    // Navigate back to the login page
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-          (route) => true, // Remove all previous routes
-    );
-  }
 
 
   @override
@@ -120,6 +110,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       }).toList();
     });
   }
+
+
+
 
   // Add new method to show date picker
   Future<void> _showDatePicker() async {
@@ -150,6 +143,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       _filterCompletedTasks();
     }
   }
+
 
 
   void _startAutoRefresh() {
@@ -450,7 +444,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
               children: [
                 Expanded(
                   child: Text(
-                  '${AppLocalizations.of(context).translate('ser_pg_history_text_name')}: ${request['userName'] ?? 'N/A'}',
+                  '${AppLocalizations.of(context).translate('ser_pg_history_text_name')}: ${request['name'] ?? 'N/A'}',
                     style: TextStyle(
                       fontSize: screenWidth * 0.04,
                       fontWeight: FontWeight.bold,
@@ -609,128 +603,180 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
           child: Column(
             children: [
               buildAppBar(
-                context,
-                _selectedLanguage,     // Correct parameter type: Language object
-                _changeLocale,
+                context: context,
+                onLanguageChange: (Language newLanguage) {
+                  // Handle language change
+                },
+                isLoginPage: false,
+                extraActions: [],
+                dashboardType: DashboardType.services,
+                onLogout: () {
+                  logOut(context);
+                },apiService: _apiService,
 
-
-                 extraActions: [
-                  IconButton(
-                    icon: Icon(Icons.logout),
-                    onPressed: () => _logout(), // Call the logout function here
-                  ),
-
-                  IconButton(
-                    icon: const Icon(
-                        Icons.free_breakfast_rounded, color: Colors.black),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              BreakHistory(userId: widget.userId),
-                        ),
-                      );
-                    },
-                  ),
-                  // _isLoading
-                  //     ? const SizedBox(
-                  //   width: 50,
-                  //   child: Center(
-                  //     child: CircularProgressIndicator(
-                  //       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  //       strokeWidth: 2,
-                  //     ),
-                  //   ),
-                  // )
-                  //     : Switch(
-                  //   value: _jobStatus,
-                  //   onChanged: _toggleJobStatus,
-                  //   activeColor: Colors.blue,
-                  //   inactiveThumbColor: Colors.red,
-                  //   inactiveTrackColor: Colors.grey,
-                  // ),
-                ], isLoginPage: false,
-              ),
+                //  extraActions: [
+                //   IconButton(
+                //     icon: Icon(Icons.logout),
+                //     onPressed: () => _logout(), // Call the logout function here
+                //   ),
+                //
+                //   IconButton(
+                //     icon: const Icon(
+                //         Icons.free_breakfast_rounded, color: Colors.black),
+                //     onPressed: () {
+                //       Navigator.of(context).push(
+                //         MaterialPageRoute(
+                //           builder: (context) =>
+                //               BreakHistory(userId: widget.userId),
+                //         ),
+                //       );
+                //     },
+                //   ),
+                //   // _isLoading
+                //   //     ? const SizedBox(
+                //   //   width: 50,
+                //   //   child: Center(
+                //   //     child: CircularProgressIndicator(
+                //   //       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                //   //       strokeWidth: 2,
+                //   //     ),
+                //   //   ),
+                //   // )
+                //   //     : Switch(
+                //   //   value: _jobStatus,
+                //   //   onChanged: _toggleJobStatus,
+                //   //   activeColor: Colors.blue,
+                //   //   inactiveThumbColor: Colors.red,
+                //   //   inactiveTrackColor: Colors.grey,
+                //   // ),
+                // ],
+                // isLoginPage: false,
+               ),
               Container(
                 color: AppColors.whiteColor,
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: AppColors.backgroundColor, // Color of the active tab background
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  labelColor: Colors.white, // Text color for the active tab
-                  unselectedLabelColor: Colors.black,
-                  tabs: [
-                    Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.pending_actions),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${AppLocalizations.of(context).translate('ser_pg_tap_text_available')} (${_availableRequests.length})',
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          _tabController.animateTo(0);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _tabController.index == 0
+                                ? AppColors.backgroundColor
+                                : AppColors.whiteColor,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.pending_actions,
+                                color: _tabController.index == 0
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${AppLocalizations.of(context).translate('ser_pg_tap_text_available')} (${_availableRequests.length})',
+                                style: TextStyle(
+                                  color: _tabController.index == 0
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.task_alt),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${AppLocalizations.of(context).translate('ser_pg_tap_text_completed')} (${_completedRequests.length})',
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          _tabController.animateTo(1);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _tabController.index == 1
+                                ? AppColors.backgroundColor
+                                : AppColors.whiteColor,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-
-                        ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.task_alt,
+                                color: _tabController.index == 1
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${AppLocalizations.of(context).translate('ser_pg_tap_text_completed')} (${_completedRequests.length})',
+                                style: TextStyle(
+                                  color: _tabController.index == 1
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
-                  // indicatorColor: Colors.white,
-                  // labelColor: Colors.white,
-                  // unselectedLabelColor: Colors.white70,
                 ),
               ),
             ],
           ),
         ),
+
         body: RefreshIndicator(
           onRefresh: () async {
             if (_jobStatus) {
               await _fetchGeneralRequests();
             }
           },
-          child: _jobStatus ? TabBarView(
+          child: _jobStatus
+              ? TabBarView(
             controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(), // Disable swipe
             children: [
               // Available Tasks Tab
-              _buildTaskList(
-                  _availableRequests, screenWidth, screenHeight, false),
+              _buildTaskList(_availableRequests, screenWidth, screenHeight, false),
               // Completed Tasks Tab
-              _buildTaskList(
-                  _completedRequests, screenWidth, screenHeight, true),
+              _buildTaskList(_completedRequests, screenWidth, screenHeight, true),
             ],
-          ) : Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.toggle_off_outlined,
-                  size: screenWidth * 0.12,
-                  color: Colors.grey[400],
+          )
+              : Center(
+            child: SingleChildScrollView( // Wrap with SingleChildScrollView for RefreshIndicator to work
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: screenHeight - kToolbarHeight * 2, // Adjust height to ensure scrollability
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.toggle_off_outlined,
+                      size: screenWidth * 0.12,
+                      color: Colors.grey[400],
+                    ),
+                    SizedBox(height: screenHeight * 0.02),
+                    Text(
+                      'Toggle status to active to view requests',
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.045,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                SizedBox(height: screenHeight * 0.02),
-                Text(
-                  'Toggle status to active to view requests',
-                  style: TextStyle(
-                    fontSize: screenWidth * 0.045,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+              ),
             ),
           ),
         ),

@@ -1,72 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'Common/app_bar.dart';
+import 'classes/ LanguageProvider.dart';
 import 'classes/language.dart';
 import 'features/auth/login.dart';
 import 'l10n/app_localizations.dart';
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => LanguageProvider(),
+      child: MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
-  _MyAppState createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  Language _selectedLanguage = Language.languageList()[0];
-  Locale _locale = const Locale('en'); // Default locale
-
-  void _changeLocale(Language language) {
-    setState(() {
-      _selectedLanguage = language;
-      _loadLocale();
-      _locale = Locale(language.languageCode);
-    });
-  }
-
-  Future<void> _loadLocale() async {
-    final prefs = await SharedPreferences.getInstance();
-    final languageCode = prefs.getString('language_code') ?? 'en';
-    setState(() {
-      _locale = Locale(languageCode);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      locale: _locale,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.white,
-      ),
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: [
-        Locale('en'), // English
-        Locale('no'), // Norwegian
-      ],
-      home: Scaffold(
-        appBar: buildAppBar(
-          context,
-          _selectedLanguage,
-          _changeLocale, extraActions: [], isLoginPage: true,
-          // _logout,
-        ),
-        body: const LoginPage(),
-      ),
+    return Consumer<LanguageProvider>(
+      builder: (context, languageProvider, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          locale: Locale(languageProvider.currentLanguage.languageCode),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: Language.languageList()
+              .map((language) => Locale(language.languageCode))
+              .toList(),
+          home: const LoginPage(),
+        );
+      },
     );
   }
 }
