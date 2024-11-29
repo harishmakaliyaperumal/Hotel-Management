@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:holtelmanagement/features/auth/screens/login.dart';
+import 'package:holtelmanagement/features/dashboard/screens/users_page_screens/food_menu/food_products/food_product_card.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'classes/ LanguageProvider.dart';
 import 'classes/language.dart';
-import 'features/auth/login.dart';
+// import 'features/auth/screens/login.dart';
 import 'l10n/app_localizations.dart';
 
 void main() {
@@ -32,8 +34,16 @@ class MyApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: Language.languageList()
-              .map((language) => Locale(language.languageCode))
+              .map((lang) => Locale(lang.languageCode))
               .toList(),
+          builder: (context, child) {
+            return Directionality(
+              textDirection: languageProvider.isLTR()
+                  ? TextDirection.ltr
+                  : TextDirection.ltr,
+              child: child!,
+            );
+          },
           home: const LoginPage(),
         );
       },

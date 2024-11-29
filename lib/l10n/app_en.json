@@ -1,7 +1,7 @@
 {
   "loing_pg_htext_login": "LOGIN",
   "loing_pg_text_welcome": "welcome back",
-  "login_pg_form_filed_userEmailId": "UserEmailId",
+  "login_pg_form_filed_userEmailId": "User EmailId",
   "login_pg_form_filed_userPassword": "Password",
   "login_pg_form_filed_button_login": "Continue",
   "ser_pg_tap_text_completed": "Completed",
@@ -45,10 +45,12 @@
   "description": "Description",
   "cus_req_for_notfill_error_msg": "Please enter a description",
   "cus_pg_req_his_card_date": "Date:",
+  "cus_pg_req_his_card_description": "description:",
   "cus_req_his_card_st_label": "Start Time:",
   "cus_req_his_card_et_label": "End Time:",
   "invalid_date_time": "Invalid Date/Time",
   "cur_pg_sub_notify_msg": "Request submitted successfully",
   "swipe_to_update_status": "swipe to update status"
+
 
 }

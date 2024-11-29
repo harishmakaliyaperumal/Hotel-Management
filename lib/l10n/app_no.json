@@ -44,6 +44,7 @@
   "please_enter_description": "Vennligst skriv inn en beskrivelse",
   "cus_req_for_notfill_error_msg":"please eenter beskrivelse",
   "cus_pg_req_his_card_date": "Dato:",
+  "cus_pg_req_his_card_description":"Beskrivelse:",
   "cus_req_his_card_st_label": "Starttidspunkt:",
   "cus_req_his_card_et_label": "Sluttid:",
   "invalid_date_time": "Ugyldig Dato/Tid",

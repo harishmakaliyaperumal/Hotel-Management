@@ -21,7 +21,12 @@ dependencies:
   intl: ^0.19.0
   swipeable_button_view: ^0.0.2
   just_audio: ^0.9.34
+  flutter_secure_storage: ^9.2.2
   provider: ^6.0.5
+  flutter_carousel_widget: ^2.2.0
+  path_provider: ^2.1.5
+  badges: ^3.0.0
+
 
 dev_dependencies:
   flutter_gen: ^5.0.0
@@ -38,6 +43,10 @@ flutter:
     - assets/images/logo.png
     - lib/l10n/app_en.json
     - lib/l10n/app_no.json
+    - lib/l10n/app_ar.json
+    - assets/images/foods/food_services_slide_img-1.png
+    - assets/images/foods/food_services_slide_img-2.png
+    - assets/images/foods/food_services_slide_img-3.png
 
 flutter_localizations:
   sdk: flutter
