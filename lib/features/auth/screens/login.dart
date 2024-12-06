@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:holtelmanagement/common/helpers/constants.dart';
 import 'package:holtelmanagement/features/auth/widgets/login_button.dart';
-import 'package:holtelmanagement/features/dashboard/screens/users_page_screens/user_menu.dart';
+import 'package:holtelmanagement/features/customer/user_menu.dart';
 import '../../../common/helpers/app_bar.dart';
 import '../../../common/helpers/shared_preferences_helper.dart';
-import '../../dashboard/screens/services_page_screens/servicedashboard.dart';
-import '../../dashboard/screens/users_page_screens/user_request_services.dart';
+import '../../dashboard/services/services_page_screens/servicedashboard.dart';
 import '../widgets/email_field.dart';
 import '../widgets/password_field.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../classes/ LanguageProvider.dart';
 import '../../../classes/language.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../theme/colors.dart';
-// import '../widgets/buttons/custom_button.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

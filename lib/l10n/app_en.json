@@ -4,6 +4,7 @@
   "login_pg_form_filed_userEmailId": "User EmailId",
   "login_pg_form_filed_userPassword": "Password",
   "login_pg_form_filed_button_login": "Continue",
+  "loing_bttn_text": "LOGIN",
   "ser_pg_tap_text_completed": "Completed",
   "ser_pg_tap_text_available": "Available",
   "ser_pg_link_notify_breaks": "Notify Breaks",
@@ -50,7 +51,12 @@
   "cus_req_his_card_et_label": "End Time:",
   "invalid_date_time": "Invalid Date/Time",
   "cur_pg_sub_notify_msg": "Request submitted successfully",
-  "swipe_to_update_status": "swipe to update status"
-
+  "swipe_to_update_status": "swipe to update status",
+  "user_menu_pg_htext": "Welcome to User Menu",
+  "user_menu_card_Htext_RS": "REQUEST SERVICES",
+  "user_menu_card_Htext_FS": "FOOD SERVICES",
+  "user_categories_pg_appbar_text":"Categories",
+  "cus_pg_subcategories_text_name": "Categories",
+  "cus_pg_subcategories_text_description": "Description"
 
 }

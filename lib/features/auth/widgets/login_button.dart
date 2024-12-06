@@ -1,6 +1,7 @@
 // lib/features/authentication/widgets/login_button.dart
 
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../theme/colors.dart';
 import '../../../common/widgets/custom_button.dart';
 
@@ -23,7 +24,7 @@ class LoginButton extends StatelessWidget {
         color: AppColors.backgroundColor,
       ),
       child: CustomButton(
-        text: 'Login',
+        text: (          AppLocalizations.of(context).translate('loing_bttn_text')),
         onPressed: onPressed,
         isLoading: isLoading,
       ),

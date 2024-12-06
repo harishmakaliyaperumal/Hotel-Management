@@ -3,6 +3,7 @@
   "loing_pg_text_welcome": "velkomst",
   "login_pg_form_filed_userEmailId": "BrukerE-post",
   "login_pg_form_filed_userPassword": "Passord",
+  "loing_bttn_text":"LOGG PÅ",
   "login_pg_form_filed_button_login": "LOGG PÅ",
   "ser_pg_tap_text_completed": "fullført",
   "ser_pg_tap_text_available": "tilgjengelig",
@@ -49,7 +50,13 @@
   "cus_req_his_card_et_label": "Sluttid:",
   "invalid_date_time": "Ugyldig Dato/Tid",
   "cur_pg_sub_notify_msg": "Forespørselen ble sendt",
-  "swipe_to_update_status":"sveip for å oppdatere status"
+  "swipe_to_update_status":"sveip for å oppdatere status",
+  "user_menu_pg_htext":"Velkommen til brukermenyen",
+  "user_menu_card_Htext_FS": "MATTJENESTER",
+  "user_menu_card_Htext_RS": "FORESPØRSELTJENESTER",
+  "user_categories_pg_appbar_text": "Kategorier",
+  "cus_pg_subcategories_text_name": "Kategorier",
+  "cus_pg_subcategories_text_description": "Beskrivelse"
 
 
 

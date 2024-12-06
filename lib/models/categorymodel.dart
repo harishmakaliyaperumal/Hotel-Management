@@ -1,34 +1,30 @@
 class CategoryModel {
-  final int restaurantMenuCatagoriesId;
+  final int restaurantMenuCategoriesId; // Note the plural 'Categories'
   final String restaurantMenuCategoryName;
-  final RestaurantModel restaurant;
-  final bool restaurantMenuCatagoriesIsActive;
-  final DateTime restaurantMenuCategoryCreatedOn;
-  final DateTime restaurantMenuCategoryUpdatedOn;
-  final int restaurantMenuCreatedBy;
-  final int restaurantMenuCategoryUpdatedBy;
+  // final String description;
+  final bool isActive;
+
+
 
   CategoryModel({
-    required this.restaurantMenuCatagoriesId,
+    required this.restaurantMenuCategoriesId,
     required this.restaurantMenuCategoryName,
-    required this.restaurant,
-    required this.restaurantMenuCatagoriesIsActive,
-    required this.restaurantMenuCategoryCreatedOn,
-    required this.restaurantMenuCategoryUpdatedOn,
-    required this.restaurantMenuCreatedBy,
-    required this.restaurantMenuCategoryUpdatedBy,
+    // required this.description,
+    required this.isActive,
+
+
+
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
-      restaurantMenuCatagoriesId: json['restaurantMenuCatagoriesId'],
+      restaurantMenuCategoriesId: json['restaurantMenuCategoriesId'],
       restaurantMenuCategoryName: json['restaurantMenuCategoryName'],
-      restaurant: RestaurantModel.fromJson(json['restaurant']),
-      restaurantMenuCatagoriesIsActive: json['restaurantMenuCatagoriesIsActive'],
-      restaurantMenuCategoryCreatedOn: DateTime.parse(json['restaurantMenuCategoryCreatedOn']),
-      restaurantMenuCategoryUpdatedOn: DateTime.parse(json['restaurantMenuCategoryUpdatedOn']),
-      restaurantMenuCreatedBy: json['restaurantMenuCreatedBy'],
-      restaurantMenuCategoryUpdatedBy: json['restaurantMenuCategoryUpdatedBy'],
+      // description:json['description'],
+      isActive: json['isActive']
+
+
+
     );
   }
 }
@@ -76,3 +72,38 @@ class RestaurantModel {
     );
   }
 }
+
+class SubCategoryModels{
+    final  int restaurantMenuSubCategoriesId;
+    final int restaurantMenuCategoriesId;
+    final String restaurantMenuCategoryName;
+    final String? description;
+    final String restaurantMenuSubCategoryName;
+    final bool isActive;
+
+
+    SubCategoryModels({
+      required this.restaurantMenuSubCategoriesId,
+      required this.restaurantMenuCategoriesId,
+      required this.restaurantMenuCategoryName,
+      this.description, // Make this optional
+      required this.restaurantMenuSubCategoryName,
+      required this.isActive,
+  });
+    factory SubCategoryModels.fromJson(Map<String, dynamic> json) {
+      return  SubCategoryModels(
+          restaurantMenuSubCategoriesId:json['restaurantMenuSubCategoriesId'],
+          restaurantMenuCategoriesId:json['restaurantMenuCategoriesId'],
+          restaurantMenuCategoryName:json['restaurantMenuCategoryName'],
+          description:json['description'],
+          restaurantMenuSubCategoryName: json['restaurantMenuSubCategoryName'],
+          isActive: json['isActive'] ?? false,
+
+      );}
+}
+
+class FoodMenuModels{
+
+}
+
+

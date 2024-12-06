@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,8 +58,7 @@ class ApiService {
       final token = await tokenProvider.getToken();
 
       if (token == null) {
-        throw Exception(
-            'Authentication token is missing. Please log in again.');
+        throw Exception('Authentication token is missing. Please log in again.');
       }
 
       final response = await http.get(
@@ -70,13 +70,16 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final responseBody = jsonDecode(response.body);
+        // Use utf8.decode to handle potential encoding issues
+        final responseBody = utf8.decode(response.bodyBytes);
+        final decodedResponse = jsonDecode(responseBody);
 
-        if (responseBody['status'] == 1) {
-          List<dynamic> data = responseBody['data'];
+        if (decodedResponse['status'] == 1) {
+          List<dynamic> data = decodedResponse['data'];
+          // print('Task Data: $data'); // Debugging
           return data.map((item) => item as Map<String, dynamic>).toList();
         } else {
-          throw Exception('Failed to fetch tasks: ${responseBody['message']}');
+          throw Exception('Failed to fetch tasks: ${decodedResponse['message']}');
         }
       } else if (response.statusCode == 401) {
         throw Exception('Unauthorized access. Please log in again.');
@@ -105,6 +108,7 @@ class ApiService {
 
       if (token == null) {
         throw Exception(
+
             'Authentication token is missing. Please log in again.');
       }
 
@@ -117,6 +121,9 @@ class ApiService {
         "requestType": requestType,
         "requestDataCreatedBy": requestDataCreatedBy,
       };
+
+
+
 
       // Add description based on availability
       if (description != null && description.isNotEmpty) {
@@ -135,6 +142,11 @@ class ApiService {
         },
         body: jsonEncode(body),
       );
+
+      print("Request Body: $body");
+      print("Response Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
+
 
       if (response.statusCode != 200) {
         throw Exception('Failed to send request');
@@ -478,18 +490,166 @@ class ApiService {
     }
   }
 
-  Future<List<CategoryModel>> getAllCategories() async {
+  // Future<List<CategoryModel>> getAllCategories(String restaurantId) async {
+  //   try {
+  //     final tokenProvider = TokenProvider();
+  //     final token = await tokenProvider.getToken();
+  //
+  //     if (token == null) {
+  //       throw Exception(
+  //           'Authentication token is missing. Please log in again.');
+  //     }
+  //
+  //     final response = await http.get(
+  //       Uri.parse('$baseUrl/admin/restaurant/getAllRestaurantCategoryById?$restaurantId'),
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         "Authorization": "Bearer $token",
+  //       },
+  //     );
+  //
+  //     if (response.statusCode == 200) {
+  //       final jsonResponse = jsonDecode(response.body);
+  //       if (jsonResponse['status'] == 1 && jsonResponse['data'] != null) {
+  //         final categoriesJson = jsonResponse['data']['categories'] as List;
+  //         return categoriesJson
+  //             .map((categoryJson) => CategoryModel.fromJson(categoryJson))
+  //             .toList();
+  //       }
+  //     }
+  //     return []; // Return empty list if any condition fails
+  //   } catch (e) {
+  //     print('Error fetching categories: $e');
+  //     return []; // Return empty list on error
+  //   }
+  // }
+
+  Future<List<CategoryModel>> fetchCategoriesByRestaurantId(int restaurantId) async {
     try {
       final tokenProvider = TokenProvider();
       final token = await tokenProvider.getToken();
 
       if (token == null) {
-        throw Exception(
-            'Authentication token is missing. Please log in again.');
+        throw Exception('Authentication token is missing. Please log in again.');
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/admin/restaurantMenuCategories/getAllCategories'),
+        Uri.parse('$baseUrl/admin/restaurant/getAllRestaurantCategoryById?restaurantId=$restaurantId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonList = json.decode(response.body);
+
+        print('Parsed JSON list length: ${jsonList.length}');
+
+        return jsonList.map((json) {
+          print('Processing JSON: $json');
+          return CategoryModel.fromJson(json);
+        }).toList();
+      } else {
+        throw Exception('Failed to load categories. Status code: ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e, stackTrace) {
+      print('Detailed error fetching categories: $e');
+      print('Stacktrace: $stackTrace');
+      rethrow;
+    }
+  }
+
+
+  Future<List<SubCategoryModels>> fetchAllRestaurantSubCategoryById(int restaurantMenuCategoriesId) async {
+    try {
+      final tokenProvider = TokenProvider();
+      final token = await tokenProvider.getToken();
+
+      if (token == null) {
+        throw Exception('Authentication token is missing. Please log in again.');
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/restaurant/getAllRestaurantSubCategoryById?restaurantSubCategoryId=$restaurantMenuCategoriesId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonList = json.decode(response.body);
+
+        print('Parsed JSON list length: ${jsonList.length}');
+
+        return jsonList.map((json) {
+          print('Processing JSON: $json');
+          return SubCategoryModels.fromJson(json);
+        }).toList();
+      } else {
+        throw Exception('Failed to load categories. Status code: ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e, stackTrace) {
+      print('Detailed error fetching categories: $e');
+      print('Stacktrace: $stackTrace');
+      rethrow;
+    }
+  }
+
+  // Future<List<FoodMenuModels>> fetchAllRestaurantFoodmenuById(int restaurantMenuSubCategoriesId) async {
+  //   try {
+  //     final tokenProvider = TokenProvider();
+  //     final token = await tokenProvider.getToken();
+  //
+  //     if (token == null) {
+  //       throw Exception('Authentication token is missing. Please log in again.');
+  //     }
+  //
+  //     final response = await http.get(
+  //       Uri.parse('$baseUrl/admin/restaurant/getAllRestaurantSubCategoryById?restaurantSubCategoryId=$restaurantMenuSubCategoriesId'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': 'Bearer $token',
+  //       },
+  //     );
+  //
+  //     print('Response Status Code: ${response.statusCode}');
+  //     print('Response Body: ${response.body}');
+  //
+  //     if (response.statusCode == 200) {
+  //       List<dynamic> jsonList = json.decode(response.body);
+  //
+  //       print('Parsed JSON list length: ${jsonList.length}');
+  //
+  //       return jsonList.map((json) {
+  //         print('Processing JSON: $json');
+  //         return FoodMenuModels.fromJson(json);
+  //       }).toList();
+  //     } else {
+  //       throw Exception('Failed to load categories. Status code: ${response.statusCode}, Body: ${response.body}');
+  //     }
+  //   } catch (e, stackTrace) {
+  //     print('Detailed error fetching categories: $e');
+  //     print('Stacktrace: $stackTrace');
+  //     rethrow;
+  //   }
+  // }
+
+
+  Future<List<Map<String, dynamic>>> fetchFoodMenu(int restaurantMenuSubCategoriesId) async {
+    try {
+      final tokenProvider = TokenProvider();
+      final token = await tokenProvider.getToken();
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/restaurantMenu/getRestaurantMenuSubCategories?restaurantMenuSubCatagoriesId=$restaurantMenuSubCategoriesId'),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -497,20 +657,34 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        if (jsonResponse['status'] == 1 && jsonResponse['data'] != null) {
-          final categoriesJson = jsonResponse['data']['categories'] as List;
-          return categoriesJson
-              .map((categoryJson) => CategoryModel.fromJson(categoryJson))
-              .toList();
+        final decodedResponse = json.decode(response.body);
+
+        if (decodedResponse['status'] == 1 &&
+            decodedResponse['data'] != null &&
+            decodedResponse['data']['menuDetails'] is List) {
+          return (decodedResponse['data']['menuDetails'] as List).map((item) {
+            final mediaFiles = item['mediaFiles'] ?? [];
+            final imageData = mediaFiles.isNotEmpty
+                ? mediaFiles[0]['mediaFile']['fileData'] ?? ''
+                : '';
+
+            return {
+              'id': item['restaurantMenuId']?.toString() ?? '',
+              'name': item['menuName'] ?? 'Unknown Item',
+              'price': item['price'] ?? 0.0,
+              'quantity':item['quantity']?? '',
+              'description': item['description'] ?? '',
+              'image': imageData,
+              'isActive': item['isActive'] ?? false,
+            };
+          }).toList();
         }
       }
-      return []; // Return empty list if any condition fails
+      return [];
     } catch (e) {
-      print('Error fetching categories: $e');
-      return []; // Return empty list on error
+      print('Error fetching food menu: $e');
+      rethrow;
     }
   }
-
 
 }

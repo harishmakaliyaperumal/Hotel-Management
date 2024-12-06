@@ -1,14 +1,14 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:holtelmanagement/common/helpers/app_bar.dart';
-import 'package:holtelmanagement/features/dashboard/screens/users_page_screens/user_categoriesPage.dart';
-import 'package:holtelmanagement/features/dashboard/screens/users_page_screens/user_food_services.dart';
-import 'package:holtelmanagement/features/dashboard/screens/users_page_screens/user_request_services.dart';
+// import 'package:holtelmanagement/features/customer/food/userpage_food_categories.dart';
+// import 'package:holtelmanagement/features/customer/services/user_page_requset_services.dart';
+import '../../classes/language.dart';
+import '../../l10n/app_localizations.dart';
+import '../services/apiservices.dart';
+import 'customer_food_services/userpage_food_categories.dart';
+import 'customer_requset_services/user_page_requset_services.dart';
 
-import '../../../../classes/language.dart';
-import '../../../services/apiservices.dart';
-import 'demo.dart';
 
 class UserMenu extends StatefulWidget {
   final String userName;
@@ -42,12 +42,22 @@ class _UserMenuState extends State<UserMenu> {
     super.initState();
     _loadRestaurants();
   }
-
   Future<void> _loadRestaurants() async {
     setState(() => isLoading = true);
     try {
       final fetchedRestaurants = await _apiService.fetchRestaurants();
-      // print('Processed Restaurants: $fetchedRestaurants'); // Debug print
+
+      // Detailed debug print
+      print('Raw Restaurants Data: $fetchedRestaurants');
+
+      // // Check each restaurant's structure
+      // fetchedRestaurants.forEach((restaurant) {
+      //   print('Restaurant Entry:');
+      //   print('Keys: ${restaurant.keys}');
+      //   print('restaurantId: ${restaurant['restaurantId']}');
+      //   print('name: ${restaurant['name']}');
+      // });
+
       setState(() => restaurants = fetchedRestaurants);
 
     } catch (e) {
@@ -113,19 +123,44 @@ class _UserMenuState extends State<UserMenu> {
                 return ListTile(
                   leading: restaurant['image'] != null
                       ? _buildBase64Image(restaurant['image'])
-                      : const Icon(Icons.restaurant),// Fallback icon if no image URL is provided
+                      : const Icon(Icons.restaurant),
                   title: Text(restaurant['name']),
                   onTap: () {
+                    int? restaurantId;
+
+                    if (restaurant['id'] is int) {
+                      restaurantId = restaurant['id'];
+                    } else if (restaurant['id'] is String) {
+                      restaurantId = int.tryParse(restaurant['id']);
+                    }
+
+                    if (restaurantId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Invalid Restaurant Selection'))
+                      );
+                      return;
+                    }
+                    // print('Selected Restaurant ID: $restaurantId');
+                    // print('Restaurant Data: $restaurant');
                     Navigator.of(context).pop();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) {
-                          print('Restaurant ID: ${restaurant['restaurantId']}');
-                          return  CategoriesPage();
-                        },
-                      ),
-                    );
+                    if (restaurantId != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CategoriesPage(
+                            restaurantId: restaurantId!,
+                            // Use ! to assert non-nullability
+                            userId: widget.userId,
+                            floorId: widget.floorId,
+                            roomNo: widget.roomNo,userName: widget.userName,
+                          ),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Invalid Restaurant Selection'))
+                      );
+                    }
                   },
                 );
               }).toList(),
@@ -160,16 +195,17 @@ class _UserMenuState extends State<UserMenu> {
 
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-      const Text(
-           'Welcome to User Menu',
-            style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-               ),
+       Center(
+         child: Text(
+           AppLocalizations.of(context).translate('user_menu_pg_htext'),
+              style: TextStyle(
+
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                 ),
+       ),
        const SizedBox(height: 30),
-
-
         Container(
           child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -185,8 +221,8 @@ class _UserMenuState extends State<UserMenu> {
                     width: 200,
                     height: 100,
                     alignment: Alignment.center,
-                    child: const Text(
-                      'FOOD SERVICES',
+                    child:  Text(
+                      AppLocalizations.of(context).translate('user_menu_card_Htext_FS'),
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -224,8 +260,8 @@ class _UserMenuState extends State<UserMenu> {
                     width: 200,
                     height: 100,
                     alignment: Alignment.center,
-                    child: const Text(
-                      'REQUEST SERVICES',
+                    child:  Text(
+                      AppLocalizations.of(context).translate('user_menu_card_Htext_RS'),
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -238,8 +274,4 @@ class _UserMenuState extends State<UserMenu> {
     ),
     );
   }
-
-
-
-
-}
+ }

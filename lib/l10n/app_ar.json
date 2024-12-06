@@ -3,6 +3,7 @@
   "loing_pg_text_welcome": "مرحبًا بعودتك",
   "login_pg_form_filed_userEmailId": "   معرف البريد الإلكتروني مستخدم ",
   "login_pg_form_filed_userPassword": "كلمة المرور",
+  "loing_bttn_text":"تسجيل الدخول",
   "login_pg_form_filed_button_login": "يكمل",
   "ser_pg_tap_text_completed": "مكتمل",
   "ser_pg_tap_text_available": "متاح",
@@ -50,6 +51,11 @@
   "cus_req_his_card_et_label": "وقت الانتهاء:",
   "invalid_date_time": "التاريخ/الوقت غير صالح",
   "cur_pg_sub_notify_msg": "تم إرسال الطلب بنجاح",
-  "swipe_to_update_status": "انتقد لتحديث الحالة"
-
+  "swipe_to_update_status": "انتقد لتحديث الحالة",
+  "user_menu_pg_htext":"مرحبًا بك في قائمة المستخدم",
+  "user_menu_card_Htext_FS": "خدمات الطعام",
+  "user_menu_card_Htext_RS": "طلبخدمات",
+  "user_categories_pg_appbar_text": "فئات",
+  "cus_pg_subcategories_text_name": "فئات",
+  "cus_pg_subcategories_text_description": "وصف"
 }
