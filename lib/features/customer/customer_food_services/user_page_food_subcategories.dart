@@ -14,7 +14,6 @@ class Subcategories extends StatefulWidget {
   final int roomNo;
   final String userName;
   final int userId;
-
   final int? restaurantMenuCategoriesId;
   final Function(List<Map<String, dynamic>>)? onCartUpdated;
 
@@ -125,7 +124,6 @@ class _SubcategoriesState extends State<Subcategories> {
 
                   ],
                 ),
-
                 trailing: Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
