@@ -1,5 +1,6 @@
 // import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:holtelmanagement/features/auth/screens/login.dart';
@@ -115,8 +116,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-
-
   // Add new method to show date picker
   Future<void> _showDatePicker() async {
     final DateTime? picked = await showDatePicker(
@@ -162,12 +161,20 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
   Future<void> _initAudio() async {
-    // Load the default system notification sound
-    await _audioPlayer.setAsset('assets/audio/notification1.wav');
-    await _audioPlayer.setVolume(0.1);
+    try {
+      // Set volume
+      await _audioPlayer.setVolume(0.1);
 
-    await _audioPlayer.setLoopMode(LoopMode.off);
+      // Load the default system notification sound
+      await _audioPlayer.setAsset('assets/audio/notification1.wav');
+
+      // Set loop mode
+      await _audioPlayer.setLoopMode(LoopMode.off);
+    } catch (e) {
+      print('Audio initialization error: $e');
+    }
   }
+
 
   Future<bool> _onWillPop() async {
     return false; // Return false to disable back button
@@ -220,15 +227,30 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-  Future<void> _playNotificationSound() async {
+  Future<void> _playNotificationSound(dynamic flag) async {
     if (_lastNotificationTime == null ||
         DateTime.now().difference(_lastNotificationTime!) >
             const Duration(seconds: 1)) {
       try {
-        // Play system notification sound
-        await SystemSound.play(SystemSoundType.alert);
+        // Debug print to confirm flag value
+        print('Notification Flag: $flag');
 
-        // Additional bell sound using just_audio
+        // Check flag type and convert to string for comparison
+        String flagStr = flag.toString();
+
+        // Play specific sound for flag 1
+        if (flagStr == '1') {
+          print('Playing specific notification sound');
+          await _audioPlayer.setAsset('assets/audio/specification1.mp3');
+        }
+        // Default sound for null, 0, or any other value
+        else {
+          print('Playing default notification sound');
+          await _audioPlayer.setAsset('assets/audio/notification1.wav');
+        }
+
+        // Additional volume and clip settings for clarity
+        await _audioPlayer.setVolume(1.0);
         await _audioPlayer.setClip(
           start: Duration.zero,
           end: const Duration(seconds: 3),
@@ -240,9 +262,12 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         _lastNotificationTime = DateTime.now();
       } catch (e) {
         print('Error playing notification sound: $e');
+        // Print more detailed error information
+        print('Audio Player Error Details: $e');
       }
     }
   }
+
 
 
   void _showOverlayNotification(String message, {bool isNew = false,String? status}) {
@@ -394,14 +419,16 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
           .toList();
 
       if (newRequests.isNotEmpty) {
-        await _playNotificationSound();
 
-        // for (var request in newRequests) {
-        //   _showOverlayNotification(
-        //       '${request['userName']} - ${request['taskName']} (${request['roomName']})',
-        //       isNew: true
-        //   );
-        // }
+        for (var request in newRequests) {
+          await _playNotificationSound(request['flag']);
+          // Optionally, you can uncomment the notification overlay if needed
+          // _showOverlayNotification(
+          //     '${request['userName']} - ${request['taskName']} (${request['roomName']})',
+          //     isNew: true
+          // );
+        }
+
       }
 
       setState(() {
@@ -431,15 +458,17 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   Widget _buildRequestCard(Map<String, dynamic> request, double screenWidth, double screenHeight) {
     bool isCompleted = request['jobStatus'] == 'Completed';
     bool isDoorChecking = request['jobStatus'] == 'Door Checking';
+    bool isKitchenInProgress = request['jobStatus'] == 'KitchenInProgress';
 
     String currentLanguage = Localizations.localeOf(context).languageCode;
 
     String description;
     if (currentLanguage == 'no') {
-      description = request['DescriptionNorweign'] ?? 'No description available'; // Norwegian description
+      description = request['DescriptionNorweign'] ?? 'No description available';
     } else {
-      description = request['Description'] ?? 'No description available'; // Default description
+      description = request['Description'] ?? 'No description available';
     }
+
     return Card(
       margin: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
       elevation: 4,
@@ -476,6 +505,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                   child: Text(
                     isDoorChecking
                         ? 'Delivered'
+                        : isKitchenInProgress
+                        ? 'Kitchen in Progress'
                         : AppLocalizations.of(context).translate(
                         request['jobStatus']?.toLowerCase()?.replaceAll(' ', '_') ?? 'unknown_status'
                     ),
@@ -485,7 +516,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-
                 ),
               ],
             ),
@@ -502,8 +532,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
               ),
             Divider(height: screenHeight * 0.02),
             _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_com_his_text_request'), request['taskName'] ?? 'N/A', screenWidth),
-            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_location'),request['roomId'] ?? 'N/A', screenWidth),
-            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_description'),  description, screenWidth),
+            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_location'), request['roomId'] ?? 'N/A', screenWidth),
+            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_description'), description, screenWidth),
             if (!isCompleted) ...[
               SizedBox(height: screenHeight * 0.015),
               SwipeableButtonView(
@@ -519,7 +549,17 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                     setState(() {
                       isfinished = true;
                     });
-                    await _updateJobStatus();
+
+                    // Special handling for KitchenInProgress
+                    if (isKitchenInProgress) {
+                      // Directly update to Door Checking status
+                      await _updateJobStatus();
+
+                      // Immediately update to Customer Feedback
+                      await _updateJobStatus();
+                    } else {
+                      await _updateJobStatus();
+                    }
                   }
                 },
                 activeColor: const Color(0xff2A6E75),
@@ -666,6 +706,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
             ],
           ),
         ),
+
+        // RefreshIndicator function
         body: RefreshIndicator(
           onRefresh: () async {
             if (_jobStatus) {
@@ -699,6 +741,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     );
   }
 
+
+
+  // Completd and filteredCompletedRequests
   Widget _buildTaskList(List<Map<String, dynamic>> tasks, double screenWidth, double screenHeight, bool isCompleted) {
     return Column(
       children: [
@@ -715,7 +760,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     );
   }
 
-
+  // completed date picker function
   Widget _buildFilterHeader(double screenWidth, double screenHeight) {
     return Container(
       padding: EdgeInsets.symmetric(
@@ -773,6 +818,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     );
   }
 
+
+  // breack function
   Widget _buildTaskListContent(List<Map<String, dynamic>> tasks, double screenWidth, double screenHeight, bool isCompleted) {
     if (tasks.isEmpty) {
       return Center(

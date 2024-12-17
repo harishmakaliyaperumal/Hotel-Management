@@ -6,24 +6,30 @@ import 'package:flutter/material.dart';
 import '../../services/apiservices.dart';
 
 class Additeampage extends StatefulWidget {
-
+  final List<Map<String, dynamic>> cartItems;
   final int floorId;
   final int roomNo;
   final String userName;
   final int userId;
-  final List<Map<String, dynamic>> cartItems;
-  final void Function(List<Map<String, dynamic>>)? onCartUpdated;
-
+  final int? restaurantId;
+  final int? restaurantCategoryId;
+  final int? restaurantSubCategoryId;
+  final int? restaurantMenuId;
+  final Function(List<Map<String, dynamic>>)? onCartUpdated;
 
   const Additeampage({
-    super.key,
+    Key? key,
     required this.cartItems,
     required this.floorId,
     required this.roomNo,
     required this.userName,
     required this.userId,
+    this.restaurantId,
+    this.restaurantCategoryId,
+    this.restaurantSubCategoryId,
+    this.restaurantMenuId,
     this.onCartUpdated,
-  });
+  }) : super(key: key);
 
   @override
   State<Additeampage> createState() => _AdditeampageState();
@@ -79,19 +85,24 @@ class _AdditeampageState extends State<Additeampage> {
     });
 
     try {
-      final response = await _apiService.saveGeneralRequest(
+      final response = await _apiService.saveGeneralFoodRequest(
         floorId: widget.floorId,
-        taskId: 200, // Hardcoded taskId
+        taskId: 23,
         roomDataId: widget.roomNo,
         rname: widget.userName,
         requestType: "Customer Request",
         description: _generateDescription(),
         requestDataCreatedBy: widget.userId,
+        restaurantId: widget.restaurantId ?? 0,
+        restaurantCategoryId: widget.restaurantCategoryId ?? 0,
+        restaurantSubCategoryId: widget.restaurantSubCategoryId ?? 0,
+        restaurantMenu: widget.restaurantMenuId ?? 0,
       );
-      // print('responces:$response');
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Request submitted successfully!')),
       );
+      Navigator.of(context).pop();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),

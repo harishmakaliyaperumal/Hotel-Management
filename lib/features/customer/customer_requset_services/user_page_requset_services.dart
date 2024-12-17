@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../classes/language.dart';
 import '../../../common/helpers/app_bar.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/categorymodel.dart';
 
 class UserDashboard extends StatefulWidget {
   final String userName;
@@ -33,11 +34,24 @@ class UserDashboard extends StatefulWidget {
 class _UserDashboardState extends State<UserDashboard> {
   final _formKey = GlobalKey<FormState>();
   int? _selectedTaskId; // Store taskDataId
+  // int? _selectedTaskId1;
+  // int? _selectedTaskId2;
   final TextEditingController _messageController = TextEditingController();
   List<Map<String, dynamic>> _tasks = []; // Task list from API
+  List<Map<String, dynamic>> _tasks1 = [];
   bool _isLoading = true; // Loading indicator
   final ApiService _apiService = ApiService();
   List<Map<String, dynamic>> _history = [];
+
+  int? _selectedTaskCategoryId;
+  int? _selectedTaskSubcategoryId;
+  int? _selectedCustomerTaskId;
+
+  List<TaskCategoryModel> _taskCategories = [];
+  List<TaskSubcategoryModel> _taskSubcategories = [];
+  List<CustomerTaskModel> _customerTasks = [];
+
+  // List<CustomerTaskModel> Tasks = [];
 
   // Language _selectedLanguage = Language.languageList()[0];
   bool _isHistoryLoading = true;
@@ -49,47 +63,150 @@ class _UserDashboardState extends State<UserDashboard> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _currentLanguage = Localizations.localeOf(context).languageCode;
-    _loadTasks();
+    _fetchTaskCategories();
+  }
+  // Fetch Task Categories
+  Future<void> _fetchTaskCategories() async {
+    try {
+      setState(() {
+        _isLoading = true; // Add a loading state
+        // _error = null; // Clear any previous errors
+      });
+      final categories = await _apiService.fetchTaskCategories();
+      setState(() {
+        _taskCategories = categories;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      // Handle error (show snackbar, log error, etc.)
+      print('Error fetching task categories: $e');
+    }
+  }
+  // Fetch Task Subcategories based on selected Category
+  Future<void> _fetchTaskSubcategories(int taskCategoryId) async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final subcategories = await _apiService.fetchTaskSubcategories(taskCategoryId);
+
+      print('Fetched Subcategories:');
+      for (var taskSubCategory in subcategories) {
+        print('Subcategory ID: ${taskSubCategory.taskSubCategoryId}, '
+            'Name: ${taskSubCategory.taskSubCategoryName}, '
+            'Category ID: ${taskSubCategory.taskCategoryId}');
+      }
+
+      setState(() {
+        _taskSubcategories = subcategories;
+        _isLoading = false;
+
+        // Reset dependent dropdowns
+        _selectedTaskSubcategoryId = null;
+        _customerTasks = [];
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _taskSubcategories = [];
+      });
+      print('Error fetching task subcategories: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load subcategories')),
+      );
+    }
+  }
+
+  // Fetch Customer Tasks based on selected Subcategory
+  Future<void> _fetchCustomerTasks(int taskSubCategoryId) async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final tasks = await _apiService.fetchCustomerTasks(taskSubCategoryId);
+
+      setState(() {
+        _customerTasks = tasks;
+        _selectedCustomerTaskId = null;
+        _isLoading = false;
+      });
+
+      print('Fetched Customer Tasks: ${_customerTasks.length}');
+    } catch (error) {
+      print('Error fetching tasks: $error');
+      setState(() {
+        _isLoading = false;
+        _customerTasks = [];
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch customer tasks')),
+      );
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+
+    // Make sure this is properly initialized
+    _taskCategories = []; // Initialize as an empty list
+    _taskSubcategories = [];
+    _customerTasks = [];
   }
 
-  Future<void> _loadHistory() async {
-    try {
-      setState(() {
-        _isHistoryLoading = true;
-      });
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _loadHistory();
+  //
+  //
+  //   if (mounted) {
+  //     setState(() {
+  //       _isHistoryLoading = false;
+  //       // _history = requests;
+  //     });
+  //   }
+  // }
 
-      final requests = await _apiService.getGeneralRequestsById();
-
-      print('Number of requests fetched: ${requests.length}');
-      print('First request details: ${requests.isNotEmpty ? requests[0] : "No requests"}');
-
-      setState(() {
-        _history = requests;
-        _isHistoryLoading = false;
-      });
-    } catch (e) {
-      print('Detailed error in _loadHistory: $e');
-
-      setState(() {
-        _isHistoryLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load history: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  // Future<void> _loadHistory() async {
+  //   setState(() {
+  //     _isHistoryLoading = true; // Start the loading indicator
+  //   });
+  //
+  //   try {
+  //     final requests = await _apiService.getCustomerRequestsById();
+  //     setState(() {
+  //       _history = requests; // Update the history with fetched data
+  //     });
+  //   } catch (e) {
+  //     // Log the error for debugging (remove this in production)
+  //     debugPrint('Error in _loadHistory: $e');
+  //     setState(() {
+  //       _history = []; // Handle the error by treating it as "no data"
+  //     });
+  //
+  //     // Show the error message to the user
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Failed to load data. Please try again later.'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } finally {
+  //     // Ensure the loading indicator is turned off
+  //     if (mounted) {
+  //       setState(() {
+  //         _isHistoryLoading = false;
+  //       });
+  //     }
+  //   }
+  // }
 
   String _formatDate(String? dateTimeStr) {
     if (dateTimeStr == null || dateTimeStr.isEmpty) return 'N/A';
@@ -124,59 +241,65 @@ class _UserDashboardState extends State<UserDashboard> {
     }
   }
 
-  // Fetch tasks from the API with language-specific handling
-  Future<void> _loadTasks() async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Fetch tasks from API
-      final List<Map<String, dynamic>> fetchedTasks =
-          await _apiService.fetchTasks();
-
-      // Process tasks with localized names
-      final processedTasks = fetchedTasks.map((task) {
-        return {...task, 'localizedTaskName': _getLocalizedTaskName(task)};
-      }).toList();
-
-      // Add a default 'Select Task' option
-      processedTasks.insert(0, {
-        'taskDataId': null,
-        'localizedTaskName':
-            AppLocalizations.of(context).translate('cus_pg_form_select'),
-        'taskName': 'Select Task'
-      });
-
-      setState(() {
-        _tasks = processedTasks;
-        _isLoading = false;
-        _selectedTaskId = null; // Set to null to show default 'Select' option
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _tasks = [
-          {
-            'taskDataId': null,
-            'localizedTaskName':
-                AppLocalizations.of(context).translate('cus_pg_form_select'),
-            'taskName': 'Select Task'
-          }
-        ];
-      });
-
-      // Show error snackbar
-      Future.microtask(() {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load tasks: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      });
-    }
-  }
+  // Future<void> _loadTasks() async {
+  //   try {
+  //     setState(() {
+  //       _isLoading = true;
+  //     });
+  //
+  //     // Fetch tasks from API
+  //     final List<Map<String, dynamic>> fetchedTasks =
+  //         await _apiService.fetchTasks();
+  //
+  //     // Process tasks with localized names
+  //     final processedTasks = fetchedTasks.map((task) {
+  //       return {
+  //         ...task,
+  //         'localizedTaskName': _getLocalizedTaskName(task),
+  //         // Ensure taskDataId is converted to an int
+  //         'taskDataId': task['taskDataId'] is int
+  //             ? task['taskDataId']
+  //             : int.tryParse(task['taskDataId'].toString()) ?? 0
+  //       };
+  //     }).toList();
+  //
+  //     // Add a default 'Select Task' option
+  //     processedTasks.insert(0, {
+  //       'taskDataId': null,
+  //       'localizedTaskName':
+  //           AppLocalizations.of(context).translate('cus_pg_form_select'),
+  //       'taskName': 'Select Task'
+  //     });
+  //
+  //     setState(() {
+  //       _tasks = processedTasks;
+  //       _isLoading = false;
+  //       _selectedTaskId = null; // Set to null to show default 'Select' option
+  //     });
+  //   } catch (e) {
+  //     setState(() {
+  //       _isLoading = false;
+  //       _tasks = [
+  //         {
+  //           'taskDataId': null,
+  //           'localizedTaskName':
+  //               AppLocalizations.of(context).translate('cus_pg_form_select'),
+  //           'taskName': 'Select Task'
+  //         }
+  //       ];
+  //     });
+  //
+  //     // Show error snackbar
+  //     Future.microtask(() {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Failed to load tasks: ${e.toString()}'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     });
+  //   }
+  // }
 
   // Submit request via ApiService
   Future<void> _submitRequest() async {
@@ -196,13 +319,16 @@ class _UserDashboardState extends State<UserDashboard> {
 
         await _apiService.saveGeneralRequest(
           floorId: widget.floorId,
-          taskId: _selectedTaskId!,
+          taskId: _selectedCustomerTaskId!,
+          taskCategoryId: _selectedTaskCategoryId!, // Add this line
+          taskSubCategoryId: _selectedTaskSubcategoryId!,
           roomDataId: widget.roomNo,
           rname: widget.userName,
           requestType: 'Customer Request',
           description: description,
           requestDataCreatedBy: widget.userId,
           descriptionNorwegian: descriptionNorwegian,
+
         );
 
         // Success handling...
@@ -218,6 +344,8 @@ class _UserDashboardState extends State<UserDashboard> {
         setState(() {
           _selectedTaskId = null;
         });
+
+        Navigator.of(context).pop();
       } catch (e) {
         // Error handling...
         ScaffoldMessenger.of(context).showSnackBar(
@@ -264,405 +392,171 @@ class _UserDashboardState extends State<UserDashboard> {
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Dropdown menu for selecting task
-                    DropdownButtonFormField<int>(
-                      decoration: InputDecoration(
-                        labelStyle: const TextStyle(color: Colors.white),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: const BorderSide(
-                              color: Color(0xffB5E198), width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: const BorderSide(
-                              color: Color(0xffB5E198), width: 1.5),
-                        ),
-                      ),
-                      style: const TextStyle(color: Colors.black),
-                      value: _selectedTaskId,
-                      hint: Text(AppLocalizations.of(context)
-                          .translate("cus_pg_form_select")),
-                      items: _tasks.map((task) {
-                        return DropdownMenuItem<int>(
-                          value: task['taskDataId'],
-                          child: Text(
-                            task['localizedTaskName'] ?? 'Select Task',
-                            overflow: TextOverflow.ellipsis,
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Dropdown menu for selecting task
+                      DropdownButtonFormField<int>(
+                        decoration: InputDecoration(
+                          labelText: 'Select Task Category',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTaskId = value;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return AppLocalizations.of(context)
-                              .translate('please_select');
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Description input
-                    TextFormField(
-                      controller: _messageController,
-                      maxLines: 3,
-                      style: const TextStyle(color: Colors.black),
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)
-                            .translate('cus_pg_form_field_des'),
-                        // labelText: 'Description',
-                        labelStyle: const TextStyle(color: Colors.black),
-                        // filled: true,
-                        // fillColor: Color(0xFFC4DAD2),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: const BorderSide(
-                              color: Color(0xffB5E198), width: 1.5),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                              color: Color(0xffB5E198), width: 1.5),
-                        ),
-                        alignLabelWithHint: true,
+                        value: _selectedTaskCategoryId,
+                        items: _taskCategories.map((category) {
+                          return DropdownMenuItem<int>(
+                            value: category.taskCategoryId,
+                            child: Text(category.taskCategoryName),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedTaskCategoryId = value;
+                              _selectedTaskSubcategoryId = null;
+                              _selectedCustomerTaskId = null;
+                              _taskSubcategories = [];
+                              _customerTasks = [];
+                            });
+                            _fetchTaskSubcategories(value);
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Please select a task category';
+                          }
+                          return null;
+                        },
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return AppLocalizations.of(context)
-                              .translate('cus_req_for_notfill_error_msg');
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Submit button
-                    Center(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.backgroundColor,
-                          borderRadius: BorderRadius.circular(
-                              8.0), // Rounded corners for the button
+                
+                      const SizedBox(height: 16),
+                
+                      // Task Subcategory Dropdown
+                      DropdownButtonFormField<int>(
+                        decoration: InputDecoration(
+                          labelText: 'Select Task Subcategory',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
                         ),
-                        child: CustomButton(
-                            text: AppLocalizations.of(context)
-                                .translate('cus_pg_form_field_butt'),
-                            onPressed: _submitRequest),
+                        value: _selectedTaskSubcategoryId,
+                        items: _taskSubcategories.map((subcategory) {
+                          print('Dropdown Item - ID: ${subcategory.taskSubCategoryId}, '
+                              'Name: ${subcategory.taskSubCategoryName}');
+                          return DropdownMenuItem<int>(
+                            value: subcategory.taskSubCategoryId,
+                            child: Text(subcategory.taskSubCategoryName),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedTaskSubcategoryId = value;
+                              _selectedCustomerTaskId = null;
+                              _customerTasks = [];
+                            });
+                            _fetchCustomerTasks(value);
+                          }
+                        },
+                        validator: (value) {
+                          if (_selectedTaskCategoryId != null && value == null) {
+                            return 'Please select a task subcategory';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-
-                    const SizedBox(height: 30),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(
-                              color: AppColors.backgroundColor, width: 1.5),
+                      const SizedBox(height: 16),
+                      // Customer Task Dropdown
+                      // Customer Task Dropdown
+                      DropdownButtonFormField<int>(
+                        decoration: InputDecoration(
+                          labelText: 'Select Customer Task',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
                         ),
-                        child: Column(
-                          children: [
-                            // History Header
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: const BoxDecoration(
-                                color: AppColors.backgroundColor,
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(13),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    AppLocalizations.of(context)
-                                        .translate('cus_pg_req_his_htext'),
-                                    // 'Request History',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.refresh,
-                                        color: Colors.white),
-                                    onPressed: _loadHistory,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // History List
-                            Expanded(
-                              child: _isHistoryLoading
-                                  ? const Center(
-                                      child: CircularProgressIndicator())
-                                  : _history.isEmpty
-                                      ? Center(
-                                          child: Text(
-                                            AppLocalizations.of(context)
-                                                .translate(
-                                                    'cus_pg_req_his_nohis_htext'),
-                                            // 'No request history available',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        )
-                                      : ListView.builder(
-                                          padding: const EdgeInsets.all(8),
-                                          itemCount: _history.length,
-                                          itemBuilder: (context, index) {
-                                            final item = _history[index];
-                                            return Card(
-                                              margin: const EdgeInsets.all(8),
-                                              elevation: 2,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(12.0),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    // Task Name Row
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Expanded(
-                                                          child:
-                                                              SingleChildScrollView(
-                                                            scrollDirection:
-                                                                Axis.horizontal,
-                                                            child: Text(
-                                                              item['taskName'] ??
-                                                                  'N/A',
-                                                              // Displaying taskName from API
-                                                              style:
-                                                                  const TextStyle(
-                                                                fontSize: 16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                color: Color(
-                                                                    0xff013457),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-
-                                                        // Status Container
-                                                        Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal: 8,
-                                                                  vertical: 4),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: _getStatusColor(
-                                                                    item['jobStatus'] ??
-                                                                        '')
-                                                                .withOpacity(
-                                                                    0.2),
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                          ),
-                                                          child: Text(
-                                                            // Translate jobStatus, falling back to 'N/A' if translation or status is missing
-                                                            AppLocalizations.of(
-                                                                        context)
-                                                                    .translate(
-                                                                        item['jobStatus']?.toLowerCase() ??
-                                                                            '') ??
-                                                                'N/A',
-                                                            style: TextStyle(
-                                                              color: _getStatusColor(
-                                                                  item['jobStatus'] ??
-                                                                      ''),
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 12,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 8),
-
-                                                    // Start Time Row
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          AppLocalizations.of(
-                                                                  context)
-                                                              .translate(
-                                                                  'cus_pg_req_his_card_date'),
-                                                          // 'Date: ',  // Label
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: Colors
-                                                                  .grey[600]),
-                                                        ),
-                                                        Text(
-                                                          _formatDate(item[
-                                                              'starttime']),
-                                                          style: const TextStyle(
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              color: Color(
-                                                                  0xff013457)),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        // Static Text (Label)
-                                                        Text(
-                                                          AppLocalizations.of(
-                                                                  context)
-                                                              .translate(
-                                                                  'cus_pg_req_his_card_description'),
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: Colors
-                                                                  .grey[600]),
-                                                        ),
-
-                                                        // Dynamic Description Based on Language
-                                                        Text(
-                                                          currentLanguage ==
-                                                                  'no'
-                                                              ? (item['descrittionNorweign'] ??
-                                                                  'No description available')
-                                                              : (item['description'] ??
-                                                                  'No description available'),
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: Color(
-                                                                0xff013457),
-                                                          ),
-                                                        )
-                                                      ],
-                                                    ),
-
-                                                    const SizedBox(height: 4),
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          AppLocalizations.of(
-                                                                  context)
-                                                              .translate(
-                                                                  'cus_req_his_card_st_label'),
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: Colors
-                                                                  .grey[600]),
-                                                        ),
-                                                        Text(
-                                                          _formatTime(item[
-                                                              'starttime']),
-                                                          style: const TextStyle(
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              color: Color(
-                                                                  0xff013457)),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          AppLocalizations.of(
-                                                                  context)
-                                                              .translate(
-                                                                  'cus_req_his_card_et_label'),
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: Colors
-                                                                  .grey[600]),
-                                                        ),
-                                                        Text(
-                                                          _formatTime(
-                                                              item['endTime']),
-                                                          style: const TextStyle(
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              color: Color(
-                                                                  0xff013457)),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 4),
-
-                                                    // Row(
-                                                    //   mainAxisAlignment: MainAxisAlignment.start,
-                                                    //   children: [
-                                                    //     Text(
-                                                    //       _formatTime(item['EndTime']),
-                                                    //       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
-                                                    //     ),
-                                                    //     Text(
-                                                    //       item['endTime'] ?? 'N/A',
-                                                    //       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xff013457)),
-                                                    //     ),
-                                                    //   ],
-                                                    // ),
-                                                  ],
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                            ),
-                          ],
+                        hint: Text('No tasks available'), // Add a hint for when list is empty
+                        value: _selectedCustomerTaskId,
+                        items: _customerTasks.isEmpty
+                            ? []
+                            : _customerTasks.map((task) {
+                          return DropdownMenuItem<int>(
+                            value: task.taskId,
+                            child: Text(task.taskName),
+                          );
+                        }).toList(),
+                        onChanged: _customerTasks.isEmpty
+                            ? null  // Disable dropdown if no tasks
+                            : (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedTaskId = value;
+                              _selectedCustomerTaskId = value;
+                            });
+                          }
+                        },
+                        validator: (value) {
+                          if (_selectedTaskSubcategoryId != null && value == null) {
+                            return 'Please select a customer task';
+                          }
+                          return null;
+                        },
+                      ),
+                
+                  const SizedBox(height: 20),
+                      // Description input
+                      TextFormField(
+                        controller: _messageController,
+                        maxLines: 3,
+                        style: const TextStyle(color: Colors.black),
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)
+                              .translate('cus_pg_form_field_des'),
+                          // labelText: 'Description',
+                          labelStyle: const TextStyle(color: Colors.black),
+                          // filled: true,
+                          // fillColor: Color(0xFFC4DAD2),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: const BorderSide(
+                                color: Color(0xffB5E198), width: 1.5),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: const BorderSide(
+                                color: Color(0xffB5E198), width: 1.5),
+                          ),
+                          alignLabelWithHint: true,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return AppLocalizations.of(context)
+                                .translate('cus_req_for_notfill_error_msg');
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      // Submit button
+                      Center(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.backgroundColor,
+                            borderRadius: BorderRadius.circular(
+                                8.0), // Rounded corners for the button
+                          ),
+                          child: CustomButton(
+                              text: AppLocalizations.of(context)
+                                  .translate('cus_pg_form_field_butt'),
+                              onPressed: _submitRequest),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

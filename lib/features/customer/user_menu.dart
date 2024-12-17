@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:holtelmanagement/common/helpers/app_bar.dart';
+
 // import 'package:holtelmanagement/features/customer/food/userpage_food_categories.dart';
 // import 'package:holtelmanagement/features/customer/services/user_page_requset_services.dart';
 import '../../classes/language.dart';
 import '../../l10n/app_localizations.dart';
 import '../services/apiservices.dart';
 import 'customer_food_services/userpage_food_categories.dart';
+import 'customer_history.dart';
 import 'customer_requset_services/user_page_requset_services.dart';
-
 
 class UserMenu extends StatefulWidget {
   final String userName;
@@ -18,30 +19,32 @@ class UserMenu extends StatefulWidget {
   final int floorId;
   final String rname;
 
-
-  const UserMenu({super.key,
-    required this.userName,
-    required this.userId,
-    required this.loginResponse,
-    required this.roomNo,
-    required this.floorId,
-    required this.rname});
+  const UserMenu(
+      {super.key,
+      required this.userName,
+      required this.userId,
+      required this.loginResponse,
+      required this.roomNo,
+      required this.floorId,
+      required this.rname});
 
   @override
   State<UserMenu> createState() => _UserMenuState();
-
 }
 
 class _UserMenuState extends State<UserMenu> {
   final ApiService _apiService = ApiService();
+
   // Language _selectedLanguage = Language.languageList()[0];
   List<Map<String, dynamic>> restaurants = [];
   bool isLoading = false;
+
   @override
   void initState() {
     super.initState();
     _loadRestaurants();
   }
+
   Future<void> _loadRestaurants() async {
     setState(() => isLoading = true);
     try {
@@ -59,7 +62,6 @@ class _UserMenuState extends State<UserMenu> {
       // });
 
       setState(() => restaurants = fetchedRestaurants);
-
     } catch (e) {
       print('Error fetching restaurants: $e');
     } finally {
@@ -115,62 +117,64 @@ class _UserMenuState extends State<UserMenu> {
           content: isLoading
               ? const Center(child: CircularProgressIndicator())
               : restaurants.isEmpty
-              ? const Text('No restaurants available')
-              : SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: restaurants.map((restaurant) {
-                return ListTile(
-                  leading: restaurant['image'] != null
-                      ? _buildBase64Image(restaurant['image'])
-                      : const Icon(Icons.restaurant),
-                  title: Text(restaurant['name']),
-                  onTap: () {
-                    int? restaurantId;
+                  ? const Text('No restaurants available')
+                  : SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: restaurants.map((restaurant) {
+                          return ListTile(
+                            leading: restaurant['image'] != null
+                                ? _buildBase64Image(restaurant['image'])
+                                : const Icon(Icons.restaurant),
+                            title: Text(restaurant['name']),
+                            onTap: () {
+                              int? restaurantId;
 
-                    if (restaurant['id'] is int) {
-                      restaurantId = restaurant['id'];
-                    } else if (restaurant['id'] is String) {
-                      restaurantId = int.tryParse(restaurant['id']);
-                    }
+                              if (restaurant['id'] is int) {
+                                restaurantId = restaurant['id'];
+                              } else if (restaurant['id'] is String) {
+                                restaurantId = int.tryParse(restaurant['id']);
+                              }
 
-                    if (restaurantId == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Invalid Restaurant Selection'))
-                      );
-                      return;
-                    }
-                    // print('Selected Restaurant ID: $restaurantId');
-                    // print('Restaurant Data: $restaurant');
-                    Navigator.of(context).pop();
-                    if (restaurantId != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CategoriesPage(
-                            restaurantId: restaurantId!,
-                            // Use ! to assert non-nullability
-                            userId: widget.userId,
-                            floorId: widget.floorId,
-                            roomNo: widget.roomNo,userName: widget.userName,
-                          ),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Invalid Restaurant Selection'))
-                      );
-                    }
-                  },
-                );
-              }).toList(),
-            ),
-          ),
+                              if (restaurantId == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Invalid Restaurant Selection')));
+                                return;
+                              }
+                              // print('Selected Restaurant ID: $restaurantId');
+                              // print('Restaurant Data: $restaurant');
+                              Navigator.of(context).pop();
+                              if (restaurantId != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => CategoriesPage(
+                                      restaurantId: restaurantId!,
+                                      // Use ! to assert non-nullability
+                                      userId: widget.userId,
+                                      floorId: widget.floorId,
+                                      roomNo: widget.roomNo,
+                                      userName: widget.userName,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'Invalid Restaurant Selection')));
+                              }
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
         );
       },
     );
   }
-
 
   Widget build(BuildContext context) {
     return Scaffold(
@@ -183,95 +187,204 @@ class _UserMenuState extends State<UserMenu> {
         extraActions: [],
         dashboardType: DashboardType.user,
         onLogout: () {
-
           logOut(context);
-
-        },apiService: _apiService,
-        // backgroundColor: Colors.lightPink, // Light pink color as per preference
+        },
+        apiService: _apiService,
       ),
-      body: Container(
-       padding:  EdgeInsets.all(20),
-         child: Column(
-
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-       Center(
-         child: Text(
-           AppLocalizations.of(context).translate('user_menu_pg_htext'),
-              style: TextStyle(
-
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                 ),
-       ),
-       const SizedBox(height: 30),
-        Container(
-          child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: InkWell(
-                  onTap: _showRestaurantDialog,
-                  child: Container(
-                    width: 200,
-                    height: 100,
-                    alignment: Alignment.center,
-                    child:  Text(
-                      AppLocalizations.of(context).translate('user_menu_card_Htext_FS'),
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+              Center(
+                child: Text(
+                  AppLocalizations.of(context).translate('user_menu_pg_htext'),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-          const SizedBox(height: 20),
-          // REQUEST SERVICES card
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+              const SizedBox(height: 30),
+
+              // First Card: Food Services (Image Left, Text Right)
               Card(
+                color: Color(0x882F919B),
                 elevation: 5,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
+                  side: BorderSide(
+                    color: Color(0xFF2A6E75), // Consistent border color
+                    width: 2.0,
+                  ),
+                ),
+                child: InkWell(
+                  onTap: _showRestaurantDialog,
+                  child: Row(
+                    children: [
+                      // Left Side Image
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage('assets/images/food_services_image.png'), // Replace with your image
+                              fit: BoxFit.cover,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      // Right Side Text
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            AppLocalizations.of(context)
+                                .translate('user_menu_card_Htext_FS'),
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              // color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Second Card: Request Services (Image Right, Text Left)
+              Card(
+                color: Color(0x882F919B),
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  side: BorderSide(
+                    color: Color(0xFF2A6E75), // Consistent border color
+                    width: 2.0,
+                  ),
                 ),
                 child: InkWell(
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => UserDashboard(
-                          userName: widget.userName,
-                          userId: widget.userId,
-                          roomNo: widget.roomNo,
-                          floorId: widget.floorId,
-                          rname: widget.rname,
-                          loginResponse: widget.loginResponse,)
+                          builder: (_) => UserDashboard(
+                            userName: widget.userName,
+                            userId: widget.userId,
+                            roomNo: widget.roomNo,
+                            floorId: widget.floorId,
+                            rname: widget.rname,
+                            loginResponse: widget.loginResponse,
+                          )
                       ),
                     );
                   },
-                  child: Container(
-                    width: 200,
-                    height: 100,
-                    alignment: Alignment.center,
-                    child:  Text(
-                      AppLocalizations.of(context).translate('user_menu_card_Htext_RS'),
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                  child: Row(
+                    children: [
+                      // Right Side Image
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage('assets/images/request_services_image.png'), // Replace with your image
+                              fit: BoxFit.cover,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            AppLocalizations.of(context)
+                                .translate('user_menu_card_Htext_RS'),
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              // color: Color(0xFF2A6E75),
+                              // color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
+              const SizedBox(height: 40),
+
+              // Order History Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Track Your Orders',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  // ElevatedButton(
+                  //   onPressed: () {
+                  //     // Add order history navigation logic
+                  //   },
+                  //   child: Text('Order History'),
+                  // ),
+
+
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage('assets/images/oderhistory.png'), // Replace with your image
+                          fit: BoxFit.cover,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CustomerHistory(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2A6E75), // Button background color
+                ),
+                child: const Text(
+                  'Order History',
+                  style: TextStyle(
+                    color: Colors.white, // Text color for contrast
+                  ),
+                ),
+              ),
+
             ],
           ),
-        ],
+        ),
       ),
-    ),
     );
   }
- }
+}

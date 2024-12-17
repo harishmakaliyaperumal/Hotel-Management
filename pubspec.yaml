@@ -26,6 +26,10 @@ dependencies:
   flutter_carousel_widget: ^2.2.0
   path_provider: ^2.1.5
   badges: ^3.0.0
+  overlay_support: ^2.1.0
+  flutter_rating_bar: ^4.0.1
+
+
 
 
 dev_dependencies:
@@ -40,13 +44,17 @@ flutter:
 
   assets:
     - assets/audio/notification1.wav
+    - assets/audio/specification1.mp3
     - assets/images/logo.png
     - lib/l10n/app_en.json
     - lib/l10n/app_no.json
     - lib/l10n/app_ar.json
     - assets/images/foods/food_services_slide_img-1.png
     - assets/images/foods/food_services_slide_img-2.png
-    - assets/images/foods/food_services_slide_img-3.png
+    - assets/images/food_services_image.png
+    - assets/images/request_services_image.png
+    - assets/images/oderhistory.png
+
 
 flutter_localizations:
   sdk: flutter

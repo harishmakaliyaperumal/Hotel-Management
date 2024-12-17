@@ -7,6 +7,7 @@ import '../../classes/ LanguageProvider.dart';
 import '../../classes/language.dart';
 import '../../features/auth/screens/login.dart';
 import '../../features/dashboard/services/services_page_screens/breakhistory.dart';
+import '../../features/dashboard/services/services_page_screens/ser_request_history.dart';
 import '../../features/services/apiservices.dart';
 import '../../theme/colors.dart';
 
@@ -197,7 +198,22 @@ AppBar buildAppBar({
                     await handleBreakNotification();
                   },
                    ),
-                  )
+                  ),
+                  PopupMenuItem(
+                    child: ListTile(
+                      leading: Icon(Icons.history),
+                      title: Text('Services History'),
+                      onTap: () {
+                        // var userId;
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SerRequestHistory(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
                 ],
 
 

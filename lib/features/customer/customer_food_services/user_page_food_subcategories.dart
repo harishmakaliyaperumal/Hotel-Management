@@ -14,18 +14,31 @@ class Subcategories extends StatefulWidget {
   final int roomNo;
   final String userName;
   final int userId;
-  final int? restaurantMenuCategoriesId;
+  final int? restaurantId; // Add this
+  final int? restaurantCategoryId; // Add this
+
   final Function(List<Map<String, dynamic>>)? onCartUpdated;
+
+
 
 
   const Subcategories({
     Key? key,
-    required this.restaurantMenuCategoriesId,
+    required this.restaurantCategoryId,
     required this.floorId,
     required this.roomNo,
     required this.userName,
     required this.userId,
+
+    required this.restaurantId,
+
+     // Make it optional
+
+
     this.onCartUpdated,
+    // required int restaurantMenu,
+
+
   }) : super(key: key);
 
   @override
@@ -52,9 +65,9 @@ class _SubcategoriesState extends State<Subcategories> {
         _errorMessage = '';
       });
 
-      print('Fetching subcategories for categoriesId: ${widget.restaurantMenuCategoriesId}');
+      print('Fetching subcategories for categoriesId: ${widget.restaurantCategoryId}');
 
-      final subcategories = await ApiService().fetchAllRestaurantSubCategoryById(widget.restaurantMenuCategoriesId!);
+      final subcategories = await ApiService().fetchAllRestaurantSubCategoryById(widget.restaurantCategoryId!);
 
       print('Fetched subcategories count: ${subcategories.length}');
 
@@ -94,14 +107,21 @@ class _SubcategoriesState extends State<Subcategories> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _errorMessage.isNotEmpty
-          ? Center(child: Text(_errorMessage))
+          ? Center(child: Text(
+        'No data available',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey.shade600,
+        ),
+      ),
+      )
           : ListView.builder(
         itemCount: _subcategories.length,
         itemBuilder: (context, index) {
           final subcategory = _subcategories[index];
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-
             child: Card(
           elevation: 4,
           shape: RoundedRectangleBorder(
@@ -146,16 +166,22 @@ class _SubcategoriesState extends State<Subcategories> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => FoodMenu(
-                        restaurantMenuSubCategoriesId: subcategory.restaurantMenuSubCategoriesId,floorId: widget.floorId,roomNo: widget.roomNo,userId: widget.userId,userName: widget.userName,
-                        onCartUpdated: (updatedCartItems) {
-                          setState(() {
-                            cartItems = updatedCartItems;
-                          });
-                        },
-                      ),
-                    ),
+                      MaterialPageRoute(
+                          builder: (context) => FoodMenu(
+                            restaurantSubCategoryId: subcategory.restaurantSubCategoryId,
+                            restaurantId:widget.restaurantId, // pass the restaurant ID from previous context,
+                            restaurantCategoryId:widget.restaurantCategoryId ,// pass the categories ID from previous context,
+                            floorId: widget.floorId,
+                            roomNo: widget.roomNo,
+                            userId: widget.userId,
+                            userName: widget.userName,
+                            onCartUpdated: (updatedCartItems) {
+                              setState(() {
+                                cartItems = updatedCartItems;
+                              });
+                            }, restaurantMenuId:104,
+                          )
+                      )
                   );
                 },
               ),

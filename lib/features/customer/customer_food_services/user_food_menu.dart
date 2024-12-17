@@ -13,17 +13,31 @@ class FoodMenu extends StatefulWidget {
   final int roomNo;
   final String userName;
   final int userId;
-  final int restaurantMenuSubCategoriesId;
+  final int restaurantSubCategoryId;
+  final int? restaurantId; // Add this
+  final int? restaurantCategoryId;
+  final int restaurantMenuId;
   final Function(List<Map<String, dynamic>>)? onCartUpdated;
+
+
+
+
+
 
   const FoodMenu({
     super.key,
-    required this.restaurantMenuSubCategoriesId,
+    required this.restaurantSubCategoryId,
     required this.floorId,
     required this.roomNo,
     required this.userName,
     required this.userId,
+    required this.restaurantMenuId,
+    this.restaurantId, // Make it optional
+    this.restaurantCategoryId,
+
     this.onCartUpdated,
+
+
   });
 
   @override
@@ -46,7 +60,7 @@ class _FoodMenuState extends State<FoodMenu> {
 
   Future<void> _loadFoodMenu() async {
     try {
-      final fetchedFoodMenu = await _apiService.fetchFoodMenu(widget.restaurantMenuSubCategoriesId);
+      final fetchedFoodMenu = await _apiService.fetchFoodMenu(widget.restaurantSubCategoryId);
 
       // Debug prints
       print('Fetched Food Menu: $fetchedFoodMenu');
@@ -59,16 +73,17 @@ class _FoodMenuState extends State<FoodMenu> {
             final image = item['image'] ?? '';
 
             return {
-              'id': item['id']?.toString() ?? '',
+              'restaurantMenuId': item['restaurantMenuId']?.toString() ?? '',
               'menuName': item['name'] ?? 'Unknown Item',
               'quantity':item['quantity']??'N/A',
               'price': item['price'] ?? 'N/A',
               'image': image, // Store image as a string
+
             };
           }).toList();
         });
       }
-
+    print('restaurantMenuId');
     } catch (e) {
       print('Error fetching food menu: $e');
 
@@ -117,18 +132,25 @@ class _FoodMenuState extends State<FoodMenu> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => Additeampage(
-                      cartItems: cartItems,
-                      floorId: widget.floorId,
-                      roomNo: widget.roomNo,
-                      userName: widget.userName,
-                      userId: widget.userId,
-                      onCartUpdated: (updatedCartItems) {
-                        _updateCartItems(updatedCartItems);
-                      },
-                    ),
-                  ),
+                    MaterialPageRoute(
+                      builder: (context) => Additeampage(
+                        cartItems: cartItems,
+                        floorId: widget.floorId,
+                        roomNo: widget.roomNo,
+                        userName: widget.userName,
+                        userId: widget.userId,
+                        restaurantId: widget.restaurantId, // Assuming you have this property
+                        restaurantCategoryId: widget.restaurantCategoryId, // Use widget property
+                        restaurantSubCategoryId: widget.restaurantSubCategoryId,
+                        restaurantMenuId: cartItems.isNotEmpty
+                            ? int.tryParse(cartItems.first['restaurantMenuId'] ?? '0')
+                            : null, // Provide a fallback if cart is empty
+
+                        onCartUpdated: (updatedCartItems) {
+                          _updateCartItems(updatedCartItems);
+                        },
+                      ),
+                    )
                 );
               },
               child: badges.Badge(
@@ -156,8 +178,11 @@ class _FoodMenuState extends State<FoodMenu> {
 
             // Find if this item is already in the cart
             final cartItemIndex = cartItems.indexWhere(
-                    (item) => item['menuName'] == foodItem['menuName']
+                    (item) => item['menuName'] == foodItem['menuName'],
+
+
             );
+
 
             return ListTile(
               leading: _buildBase64Image(foodItem['image']),
@@ -204,6 +229,7 @@ class _FoodMenuState extends State<FoodMenu> {
                       'quantity': foodItem['quantity'] ?? 'N/A',
                       "price": foodItem['price'] ?? '0.0',
                       "image": foodItem['image'] ?? '',
+                      "restaurantMenuId":foodItem['restaurantMenuId'] ?? '0',
                       "cardquantity": 1,
                     });
                     _updateCartItems(cartItems);

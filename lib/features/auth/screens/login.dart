@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:holtelmanagement/common/helpers/constants.dart';
 import 'package:holtelmanagement/features/auth/widgets/login_button.dart';
 import 'package:holtelmanagement/features/customer/user_menu.dart';
+import 'package:holtelmanagement/features/kitchenMenu/screens/kitchen_login.dart';
 import '../../../common/helpers/app_bar.dart';
 import '../../../common/helpers/shared_preferences_helper.dart';
 import '../../dashboard/services/services_page_screens/servicedashboard.dart';
@@ -16,6 +17,11 @@ import '../../../theme/colors.dart';
 
 
 class LoginPage extends StatefulWidget {
+
+
+
+
+
   const LoginPage({super.key});
 
   @override
@@ -86,7 +92,10 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) => ServicesDashboard(
             userId: userId, userName: userName, roomNo: roomNo.toString(), floorId: floorId.toString())));
-      } else {
+      } else if(userType == "RESTAURANT"){
+        Navigator.pushReplacement(context, MaterialPageRoute( builder:(_)=>KitchenLogin()));
+      }
+      else {
         _showError("Unknown user type");
       }
 

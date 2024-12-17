@@ -1,5 +1,5 @@
 class CategoryModel {
-  final int restaurantMenuCategoriesId; // Note the plural 'Categories'
+  final int restaurantCategoryId; // Note the plural 'Categories'
   final String restaurantMenuCategoryName;
   // final String description;
   final bool isActive;
@@ -7,7 +7,7 @@ class CategoryModel {
 
 
   CategoryModel({
-    required this.restaurantMenuCategoriesId,
+    required this.restaurantCategoryId,
     required this.restaurantMenuCategoryName,
     // required this.description,
     required this.isActive,
@@ -18,7 +18,7 @@ class CategoryModel {
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
-      restaurantMenuCategoriesId: json['restaurantMenuCategoriesId'],
+        restaurantCategoryId: json['restaurantMenuCategoriesId'],
       restaurantMenuCategoryName: json['restaurantMenuCategoryName'],
       // description:json['description'],
       isActive: json['isActive']
@@ -74,8 +74,8 @@ class RestaurantModel {
 }
 
 class SubCategoryModels{
-    final  int restaurantMenuSubCategoriesId;
-    final int restaurantMenuCategoriesId;
+    final  int restaurantSubCategoryId;
+    final int restaurantCategoryId;
     final String restaurantMenuCategoryName;
     final String? description;
     final String restaurantMenuSubCategoryName;
@@ -83,8 +83,8 @@ class SubCategoryModels{
 
 
     SubCategoryModels({
-      required this.restaurantMenuSubCategoriesId,
-      required this.restaurantMenuCategoriesId,
+      required this.restaurantSubCategoryId,
+      required this.restaurantCategoryId,
       required this.restaurantMenuCategoryName,
       this.description, // Make this optional
       required this.restaurantMenuSubCategoryName,
@@ -92,8 +92,8 @@ class SubCategoryModels{
   });
     factory SubCategoryModels.fromJson(Map<String, dynamic> json) {
       return  SubCategoryModels(
-          restaurantMenuSubCategoriesId:json['restaurantMenuSubCategoriesId'],
-          restaurantMenuCategoriesId:json['restaurantMenuCategoriesId'],
+        restaurantSubCategoryId:json['restaurantMenuSubCategoriesId'],
+          restaurantCategoryId:json['restaurantMenuCategoriesId'],
           restaurantMenuCategoryName:json['restaurantMenuCategoryName'],
           description:json['description'],
           restaurantMenuSubCategoryName: json['restaurantMenuSubCategoryName'],
@@ -102,8 +102,138 @@ class SubCategoryModels{
       );}
 }
 
-class FoodMenuModels{
 
+
+
+// Task Category Model
+class TaskCategoryModel {
+  final int taskCategoryId;
+  final String taskCategoryName;
+  final bool taskCategoryIsActive;
+  final int taskCategoryCreatedBy;
+
+  TaskCategoryModel({
+    required this.taskCategoryId,
+    required this.taskCategoryName,
+    required this.taskCategoryCreatedBy,
+    required this.taskCategoryIsActive,
+  });
+
+  factory TaskCategoryModel.fromJson(Map<String, dynamic> json) {
+    return TaskCategoryModel(
+      taskCategoryId: json['TaskCategoryId'],
+      taskCategoryName: json['TaskCategoryName'],
+      taskCategoryCreatedBy: json['taskCategorgyCreatedBy'],
+      taskCategoryIsActive: json['TaskCategoryIsActive'],
+    );
+  }
 }
+
+// Task Subcategory Model
+class TaskSubcategoryModel {
+  final int taskSubCategoryId;
+  final String taskSubCategoryName;
+  final int taskCategoryId;
+  final bool taskSubcategoryIsActive;
+
+  TaskSubcategoryModel({
+    required this.taskSubCategoryId,
+    required this.taskSubCategoryName,
+    required this.taskCategoryId,
+    required this.taskSubcategoryIsActive,
+  });
+
+  factory TaskSubcategoryModel.fromJson(Map<String, dynamic> json) {
+    // Print raw JSON for debugging
+    print('Subcategory Raw JSON: $json');
+
+    // Handle nested category structure
+    int? extractedCategoryId;
+    if (json.containsKey('taskCategory') && json['taskCategory'] is Map) {
+      extractedCategoryId = json['taskCategory']['taskCategoryId'];
+    } else {
+      extractedCategoryId = json['taskCategoryId'];
+    }
+
+    return TaskSubcategoryModel(
+      taskSubCategoryId: _parseIntSafely(json, [
+        'taskSubCategoryId',
+        'TaskSubcategoryId',
+        'id'
+      ]),
+      taskSubCategoryName: _parseStringSafely(json, [
+        'taskSubCategoryName',
+        'TaskSubCategoryName',
+        'name'
+      ]),
+      taskCategoryId: extractedCategoryId ?? 0,
+      taskSubcategoryIsActive: _parseBoolSafely(json, [
+        'taskSubcategoryIsActive',
+        'TaskSubcategoryIsActive',
+        'isActive'
+      ]),
+    );
+  }
+
+  // Existing helper methods...
+  static int _parseIntSafely(Map json, List<String> keys) {
+    for (var key in keys) {
+      if (json.containsKey(key) && json[key] != null) {
+        return json[key] is int
+            ? json[key]
+            : int.tryParse(json[key].toString()) ?? 0;
+      }
+    }
+    return 0;
+  }
+
+  static String _parseStringSafely(Map json, List<String> keys) {
+    for (var key in keys) {
+      if (json.containsKey(key) && json[key] != null) {
+        return json[key].toString();
+      }
+    }
+    return '';
+  }
+
+  static bool _parseBoolSafely(Map json, List<String> keys) {
+    for (var key in keys) {
+      if (json.containsKey(key) && json[key] != null) {
+        if (json[key] is bool) return json[key];
+        if (json[key] is int) return json[key] != 0;
+        if (json[key] is String) {
+          return ['true', '1', 'yes'].contains(json[key].toLowerCase());
+        }
+      }
+    }
+    return false;
+  }
+}
+
+
+// Customer Task Model
+class CustomerTaskModel {
+  final String taskName;
+  final int taskId;
+
+  CustomerTaskModel({
+    required this.taskName,
+    required this.taskId
+  });
+
+  factory CustomerTaskModel.fromJson(Map<String, dynamic> json) {
+    return CustomerTaskModel(
+        taskName: (json['taskName'] ?? '').toString(),
+        taskId: json['taskId'] is int
+            ? json['taskId']
+            : int.tryParse(json['taskId']?.toString() ?? '0') ?? 0
+    );
+  }
+}
+
+
+
+
+
 
 

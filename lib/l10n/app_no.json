@@ -56,8 +56,10 @@
   "user_menu_card_Htext_RS": "FORESPØRSELTJENESTER",
   "user_categories_pg_appbar_text": "Kategorier",
   "cus_pg_subcategories_text_name": "Kategorier",
-  "cus_pg_subcategories_text_description": "Beskrivelse"
-
-
+  "cus_pg_subcategories_text_description": "Beskrivelse",
+  "kitchenInProgress": "Kjøkken under arbeid",
+  "kitchenInProgressCompleted": "Kjøkken under arbeid fullført",
+  "services_tab": "tjenester-fanen",
+  "food_tab": "Matfanen"
 
 }

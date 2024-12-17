@@ -57,6 +57,10 @@
   "user_menu_card_Htext_FS": "FOOD SERVICES",
   "user_categories_pg_appbar_text":"Categories",
   "cus_pg_subcategories_text_name": "Categories",
-  "cus_pg_subcategories_text_description": "Description"
+  "cus_pg_subcategories_text_description": "Description",
+  "kitchenInProgress": "KitchenInProgress",
+  "kitchenInProgressCompleted": "KitchenInProgressCompleted",
+  "services_tab": "Services Tab",
+  "food_tab": "Food Tab"
 
 }

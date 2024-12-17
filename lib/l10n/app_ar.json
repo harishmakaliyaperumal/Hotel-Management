@@ -57,5 +57,9 @@
   "user_menu_card_Htext_RS": "طلبخدمات",
   "user_categories_pg_appbar_text": "فئات",
   "cus_pg_subcategories_text_name": "فئات",
-  "cus_pg_subcategories_text_description": "وصف"
+  "cus_pg_subcategories_text_description": "وصف",
+  "kitchenInProgress": "المطبخ قيد الإنجاز",
+  "kitchenInProgressCompleted": "المطبخ قيد الإنجاز اكتمل",
+  "services_tab": "علامة التبويب الخدمات",
+  "food_tab": "علامة تبويب الطعام"
 }
