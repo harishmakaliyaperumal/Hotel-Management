@@ -115,7 +115,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     });
   }
 
-
   // Add new method to show date picker
   Future<void> _showDatePicker() async {
     final DateTime? picked = await showDatePicker(

@@ -13,8 +13,7 @@ import '../kitchenMenu/kitchen_models/data.dart';
 class ApiService {
   final String baseUrl = 'https://www.hotels.annulartech.net';
   // Login functional
-  Future<Map<String, dynamic>> login(String userEmailId,
-      String password,) async {
+  Future<Map<String, dynamic>> login(String userEmailId, String password,) async {
     final String loginUrl = '$baseUrl/user/login';
 
     try {
@@ -1168,17 +1167,6 @@ class ApiService {
 
 
     try {
-      final encodedComment = Uri.encodeQueryComponent(ratingComment);
-      final formattedRating = rating.toStringAsFixed(1);
-
-      // Detailed URL construction logging
-      // final fullUrl = '$baseUrl/hotelapp/updateRating'
-      //     'rating=$formattedRating'
-      //     'ratingComment=$encodedComment'
-      //     'requestJobHistoryId=${Uri.encodeQueryComponent(requestJobHistoryId.trim())}';
-
-      // print('Constructed Full URL: $fullUrl');
-
       final response = await http.put(
         Uri.parse(
             '$baseUrl/hotelapp/updateServiceRating?rating=$rating&ratingComment=$ratingComment&requestJobHistoryId=$requestJobHistoryId'
@@ -1202,9 +1190,6 @@ class ApiService {
       rethrow; // Re-throw to allow the UI to handle the error
     }
   }
-
-
-
 
 }
 
