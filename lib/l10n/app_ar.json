@@ -61,5 +61,17 @@
   "kitchenInProgress": "المطبخ قيد الإنجاز",
   "kitchenInProgressCompleted": "المطبخ قيد الإنجاز اكتمل",
   "services_tab": "علامة التبويب الخدمات",
-  "food_tab": "علامة تبويب الطعام"
+  "food_tab": "علامة تبويب الطعام",
+  "kit_tab_heading_text_available_req": "الطلب المتاح",
+  "kit_tab_heading_text_completed_req": "الطلب المكتمل",
+  "kit_tab_card_des": "وصف",
+  "user_menu_card_text_order_history": "تتبع طلباتك",
+  "user_page_select_task_category": "اختر فئة المهمة",
+  "user_page_select_task_subcategory": "اختر الفئة الفرعية للمهمة",
+  "user_page_select_task_customer_task": "اختر مهمة العميل",
+  "user_page_valid_message_please_select_customer_task": "يرجى اختيار مهمة العميل",
+  "user_page_valid_message_please_select_subcategory": "يرجى اختيار الفئة الفرعية",
+  "user_page_valid_message_please_select_category": "يرجى اختيار الفئة",
+  "user_menu_page_order_button": "تاريخ الطلبات"
+
 }

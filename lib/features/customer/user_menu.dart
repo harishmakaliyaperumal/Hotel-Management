@@ -331,7 +331,8 @@ class _UserMenuState extends State<UserMenu> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Track Your Orders',
+                    AppLocalizations.of(context)
+                        .translate('user_menu_card_text_order_history'),
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -373,8 +374,9 @@ class _UserMenuState extends State<UserMenu> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2A6E75), // Button background color
                 ),
-                child: const Text(
-                  'Order History',
+                child:  Text(
+                  AppLocalizations.of(context).translate('user_menu_page_order_button'),
+                  // 'Order History',
                   style: TextStyle(
                     color: Colors.white, // Text color for contrast
                   ),

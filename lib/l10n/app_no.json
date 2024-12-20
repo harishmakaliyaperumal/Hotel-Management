@@ -60,6 +60,17 @@
   "kitchenInProgress": "Kjøkken under arbeid",
   "kitchenInProgressCompleted": "Kjøkken under arbeid fullført",
   "services_tab": "tjenester-fanen",
-  "food_tab": "Matfanen"
+  "food_tab": "Matfanen",
+  "kit_tab_heading_text_available_req": "TILGJENGELIG",
+  "kit_tab_heading_text_completed_req": "FULLFØRT",
+  "kit_tab_card_des": "Beskrivelse",
+  "user_menu_card_text_order_history": "Ordresporing",
+  "user_page_select_task_category": "Velg oppgave kategori",
+  "user_page_select_task_subcategory": "Velg oppgave underkategori",
+  "user_page_select_task_customer_task": "Velg kundeoppgave",
+  "user_page_valid_message_please_select_customer_task": "Please select a customer task",
+  "user_page_valid_message_please_select_subcategory": "Vennligst velg en underkategori",
+  "user_page_valid_message_please_select_category": "Vennligst velg en kategori",
+  "user_menu_page_order_button": "Bestillingshistorikk"
 
 }

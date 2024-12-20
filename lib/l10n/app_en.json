@@ -61,6 +61,21 @@
   "kitchenInProgress": "KitchenInProgress",
   "kitchenInProgressCompleted": "KitchenInProgressCompleted",
   "services_tab": "Services Tab",
-  "food_tab": "Food Tab"
+  "food_tab": "Food Tab",
+  "kit_tab_heading_text_available_req": "Available Request",
+  "kit_tab_heading_text_completed_req": "Completed Request",
+  "kit_tab_card_des": "Description",
+  "user_menu_card_text_order_history": "Track your orders",
+  "user_page_select_task_category": "Select Task Category",
+  "user_page_select_task_subcategory": "Select Task SubCategory",
+  "user_page_select_task_customer_task": "Select Customer Task",
+  "user_page_valid_message_please_select_customer_task": "Please select a customer task",
+  "user_page_valid_message_please_select_subcategory": "Please select a subcategory",
+  "user_page_valid_message_please_select_category": "Please select a category",
+  "user_menu_page_order_button": "Order History"
+
+
+
+
 
 }

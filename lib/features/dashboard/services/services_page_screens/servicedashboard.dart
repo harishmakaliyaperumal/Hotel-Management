@@ -12,7 +12,6 @@ import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swipeable_button_view/swipeable_button_view.dart';
-
 import '../../../../classes/language.dart';
 import '../../../../common/helpers/app_bar.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -51,6 +50,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   DateTime? _lastNotificationTime;
   final AudioPlayer _audioPlayer = AudioPlayer();
   Language _selectedLanguage = Language.languageList()[0];
+
   int _currentStatusIndex = 0; // Index for tracking current status
   final List<String> _statuses = [
     'Accepted',
@@ -68,9 +68,11 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     _tabController = TabController(length: 2, vsync: this);
     // Check initial job status and load requests if active
     _checkInitialJobStatus();
+
     _selectedDate = DateTime.now();
     _initAudio();
     _startAutoRefresh();
+
 
     _tabController.addListener(() {
       if (_tabController.index == 0) { // Completed tasks tab

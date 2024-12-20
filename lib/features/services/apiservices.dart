@@ -260,10 +260,6 @@ class ApiService {
         "taskSubCategoryId":taskSubCategoryId,
         "taskCategoryId":taskCategoryId
       };
-
-
-
-
       // Add description based on availability
       if (description != null && description.isNotEmpty) {
         body['description'] = description;
@@ -439,8 +435,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> updateJobStatus(bool jobStatus,
-      String userId) async {
+  Future<Map<String, dynamic>> updateJobStatus(bool jobStatus, String userId) async {
     try {
       final tokenProvider = TokenProvider();
       final token = await tokenProvider.getToken();
@@ -460,7 +455,10 @@ class ApiService {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
+
       );
+      print('userId:$userId,$jobStatus');
+      print('jobStatus:$jobStatus');
 
       if (response.statusCode == 200) {
         // print('checkdeed${response.body}');
@@ -980,9 +978,9 @@ class ApiService {
       final tokenProvider = TokenProvider();
       final token = await tokenProvider.getToken();
 
-      if (token == null) {
-        throw Exception('Authentication token is missing. Please log in again.');
-      }
+      // if (token == null) {
+      //   throw Exception('Authentication token is missing. Please log in again.');
+      // }
 
       final response = await http.get(
         Uri.parse('$baseUrl/hotelapp/getAllRestaurantOrders'),
@@ -993,8 +991,9 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        print(jsonResponse); // Debug the response structure
+        final responseBody = utf8.decode(response.bodyBytes);
+        final jsonResponse = jsonDecode(responseBody);
+        // print(jsonResponse); // Debug the response structure
 
         // Assuming jsonResponse is a List
         if (jsonResponse is List) {

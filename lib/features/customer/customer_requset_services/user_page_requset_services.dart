@@ -401,7 +401,7 @@ class _UserDashboardState extends State<UserDashboard> {
                       // Dropdown menu for selecting task
                       DropdownButtonFormField<int>(
                         decoration: InputDecoration(
-                          labelText: 'Select Task Category',
+                          labelText: AppLocalizations.of(context).translate('user_page_select_task_category'),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -427,7 +427,7 @@ class _UserDashboardState extends State<UserDashboard> {
                         },
                         validator: (value) {
                           if (value == null) {
-                            return 'Please select a task category';
+                            return AppLocalizations.of(context)!.translate('user_page_valid_message_please_select_category');
                           }
                           return null;
                         },
@@ -438,7 +438,7 @@ class _UserDashboardState extends State<UserDashboard> {
                       // Task Subcategory Dropdown
                       DropdownButtonFormField<int>(
                         decoration: InputDecoration(
-                          labelText: 'Select Task Subcategory',
+                          labelText: AppLocalizations.of(context).translate('user_page_select_task_subcategory'),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -464,7 +464,8 @@ class _UserDashboardState extends State<UserDashboard> {
                         },
                         validator: (value) {
                           if (_selectedTaskCategoryId != null && value == null) {
-                            return 'Please select a task subcategory';
+                            // return 'Please select a task subcategory';
+                            return AppLocalizations.of(context)!.translate('user_page_valid_message_please_select_subcategory');
                           }
                           return null;
                         },
@@ -474,12 +475,12 @@ class _UserDashboardState extends State<UserDashboard> {
                       // Customer Task Dropdown
                       DropdownButtonFormField<int>(
                         decoration: InputDecoration(
-                          labelText: 'Select Customer Task',
+                          labelText: AppLocalizations.of(context).translate('user_page_select_task_customer_task'),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        hint: Text('No tasks available'), // Add a hint for when list is empty
+                        // hint: Text('No tasks available'), // Add a hint for when list is empty
                         value: _selectedCustomerTaskId,
                         items: _customerTasks.isEmpty
                             ? []
@@ -501,7 +502,7 @@ class _UserDashboardState extends State<UserDashboard> {
                         },
                         validator: (value) {
                           if (_selectedTaskSubcategoryId != null && value == null) {
-                            return 'Please select a customer task';
+                            return AppLocalizations.of(context)!.translate('user_page_valid_message_please_select_customer_task');
                           }
                           return null;
                         },
@@ -532,13 +533,13 @@ class _UserDashboardState extends State<UserDashboard> {
                           ),
                           alignLabelWithHint: true,
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return AppLocalizations.of(context)
-                                .translate('cus_req_for_notfill_error_msg');
-                          }
-                          return null;
-                        },
+                        // validator: (value) {
+                        //   if (value == null || value.isEmpty) {
+                        //     return AppLocalizations.of(context)
+                        //         .translate('cus_req_for_notfill_error_msg');
+                        //   }
+                        //   return null;
+                        // },
                       ),
                       const SizedBox(height: 20),
                       // Submit button

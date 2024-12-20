@@ -101,70 +101,72 @@ class _BreakHistoryState extends State<BreakHistory> {
         },  apiService: _apiService,
 
       ),
-      body: RefreshIndicator(
-        onRefresh: fetchBreakHistory,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : errorMessage != null
-              ? Center(child: Text('Error: $errorMessage'))
-              : breakData.isEmpty
-              ?  Center(
-            child: Text(
-              AppLocalizations.of(context).translate("br_his_text_break_history"),
-              // 'No break history available',
-              style: TextStyle(fontSize: 16),
-            ),
-          )
-              : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
+      body: SingleChildScrollView(
+        child: RefreshIndicator(
+          onRefresh: fetchBreakHistory,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : errorMessage != null
+                ? Center(child: Text('Error: $errorMessage'))
+                : breakData.isEmpty
+                ?  Center(
+              child: Text(
                 AppLocalizations.of(context).translate("br_his_text_break_history"),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                // 'No break history available',
+                style: TextStyle(fontSize: 16),
               ),
-              // Text(
-              //   'Break History - User ID: ${widget.userId}',
-              //   style: const TextStyle(
-              //     fontSize: 20,
-              //     fontWeight: FontWeight.bold,
-              //   ),
-              // ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns:  [
-                      DataColumn(
-                        label: Text(AppLocalizations.of(context).translate('br_his_tab_date') ?? 'Date'),
-                      ),
-                      DataColumn(
-                        label: Text(AppLocalizations.of(context).translate('br_his_tab_start_time') ?? 'Start Time'),
-                      ),
-                      DataColumn(
-                        label: Text(AppLocalizations.of(context).translate('br_his_tab_end_time') ?? 'End Time'),
-                      ),
-                      DataColumn(
-                        label: Text(AppLocalizations.of(context).translate('br_his_tab_status') ?? 'Status'),
-                      ),
-                    ],
-                    rows: breakData.map((breakItem) {
-                      return DataRow(cells: [
-                        DataCell(Text(formatDate(breakItem.breakCreatedOn))),
-                        DataCell(Text(formatTime(breakItem.startTime))),
-                        DataCell(Text(formatTime(breakItem.endTime))),
-                        DataCell(Text(breakItem.status ?? '-')),
-                      ]);
-                    }).toList(),
+            )
+                : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppLocalizations.of(context).translate("br_his_text_break_history"),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
+                // Text(
+                //   'Break History - User ID: ${widget.userId}',
+                //   style: const TextStyle(
+                //     fontSize: 20,
+                //     fontWeight: FontWeight.bold,
+                //   ),
+                // ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columns:  [
+                        DataColumn(
+                          label: Text(AppLocalizations.of(context).translate('br_his_tab_date') ?? 'Date'),
+                        ),
+                        DataColumn(
+                          label: Text(AppLocalizations.of(context).translate('br_his_tab_start_time') ?? 'Start Time'),
+                        ),
+                        DataColumn(
+                          label: Text(AppLocalizations.of(context).translate('br_his_tab_end_time') ?? 'End Time'),
+                        ),
+                        DataColumn(
+                          label: Text(AppLocalizations.of(context).translate('br_his_tab_status') ?? 'Status'),
+                        ),
+                      ],
+                      rows: breakData.map((breakItem) {
+                        return DataRow(cells: [
+                          DataCell(Text(formatDate(breakItem.breakCreatedOn))),
+                          DataCell(Text(formatTime(breakItem.startTime))),
+                          DataCell(Text(formatTime(breakItem.endTime))),
+                          DataCell(Text(breakItem.status ?? '-')),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
