@@ -110,21 +110,22 @@ class TaskCategoryModel {
   final int taskCategoryId;
   final String taskCategoryName;
   final bool taskCategoryIsActive;
-  final int taskCategoryCreatedBy;
+  final int taskCategorgyCreatedBy;
+
 
   TaskCategoryModel({
     required this.taskCategoryId,
     required this.taskCategoryName,
-    required this.taskCategoryCreatedBy,
+    required this. taskCategorgyCreatedBy,
     required this.taskCategoryIsActive,
   });
 
   factory TaskCategoryModel.fromJson(Map<String, dynamic> json) {
     return TaskCategoryModel(
-      taskCategoryId: json['TaskCategoryId'],
-      taskCategoryName: json['TaskCategoryName'],
-      taskCategoryCreatedBy: json['taskCategorgyCreatedBy'],
-      taskCategoryIsActive: json['TaskCategoryIsActive'],
+      taskCategoryId: json['TaskCategoryId'] as int,
+      taskCategoryIsActive: json['TaskCategoryIsActive'] as bool,
+      taskCategoryName: json['TaskCategoryName'] as String,
+      taskCategorgyCreatedBy: json['taskCategorgyCreatedBy'] as int,
     );
   }
 }
@@ -162,8 +163,8 @@ class TaskSubcategoryModel {
         'id'
       ]),
       taskSubCategoryName: _parseStringSafely(json, [
-        'taskSubCategoryName',
-        'TaskSubCategoryName',
+        'taskSubCategoryName'as String,
+        'TaskSubCategoryName'as String,
         'name'
       ]),
       taskCategoryId: extractedCategoryId ?? 0,

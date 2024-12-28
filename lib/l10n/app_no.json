@@ -24,6 +24,7 @@
   "requested":"Forespørsel",
   "ser_pg_com_his_text_request":"Forespørsel",
   "ser_pg_history_card_text_location":"Plassering",
+  "ser_pg_history_card_text_taskId": "Oppgave-ID",
   "ser_pg_history_card_text_description": "Beskrivelse",
   "jobStatus": "jobbstatus",
   "taskName": "oppgavenavn",

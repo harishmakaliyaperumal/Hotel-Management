@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:holtelmanagement/features/auth/screens/login.dart';
 // import 'package:holtelmanagement/features/dashboard/screens/breakhistory.dart';
 import 'package:holtelmanagement/features/dashboard/widgets/customtabbar.dart';
+import 'package:holtelmanagement/features/dashboard/widgets/ser_page_rating.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
 import 'package:holtelmanagement/theme/colors.dart';
 import 'package:intl/intl.dart';
@@ -14,7 +15,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swipeable_button_view/swipeable_button_view.dart';
 import '../../../../classes/language.dart';
 import '../../../../common/helpers/app_bar.dart';
+import '../../../../common/helpers/shared_preferences_helper.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../services_models/ser_models.dart';
 
 
 class ServicesDashboard extends StatefulWidget {
@@ -50,6 +53,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   DateTime? _lastNotificationTime;
   final AudioPlayer _audioPlayer = AudioPlayer();
   Language _selectedLanguage = Language.languageList()[0];
+  final SharedPreferencesHelper prefsHelper = SharedPreferencesHelper();
 
   int _currentStatusIndex = 0; // Index for tracking current status
   final List<String> _statuses = [
@@ -96,6 +100,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   void dispose() {
     _tabController.dispose();
     _audioPlayer.dispose();
+    _autoRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -532,9 +537,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                 ),
               ),
             Divider(height: screenHeight * 0.02),
-            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_com_his_text_request'), request['taskName'] ?? 'N/A', screenWidth),
-            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_location'), request['roomId'] ?? 'N/A', screenWidth),
-            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_description'), description, screenWidth),
+            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_com_his_text_request'), request['taskName'] ?? 'N/A', screenWidth, request),
+            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_location'), request['roomId'] ?? 'N/A', screenWidth, request),
+            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_description'), description, screenWidth, request),
             if (!isCompleted) ...[
               SizedBox(height: screenHeight * 0.015),
               SwipeableButtonView(
@@ -612,7 +617,11 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-  Widget _buildInfoRow(String label, String value, double screenWidth) {
+  Widget _buildInfoRow(String label, String value, double screenWidth, Map<String, dynamic> request) {
+    final bool isDescription = label == AppLocalizations.of(context).translate('ser_pg_history_card_text_description');
+
+    if (!mounted) return const SizedBox.shrink();
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: screenWidth * 0.01),
       child: Row(
@@ -629,7 +638,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
             ),
           ),
           Expanded(
-            child: Text(
+            child: isDescription
+                ? _buildDescriptionWithLink(value, screenWidth, request)
+                : Text(
               value,
               style: TextStyle(
                 fontSize: screenWidth * 0.035,
@@ -642,6 +653,92 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     );
   }
 
+
+
+  Widget _buildDescriptionWithLink(String description, double screenWidth, Map<String, dynamic> request) {
+    // Safe type check for feedback status
+    bool isFeedbackSubmitted = false;
+    try {
+      isFeedbackSubmitted = request['feedback_status'] == true ||
+          request['jobStatus'] == 'Completed';
+    } catch (e) {
+      print('Error checking feedback status: $e');
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            description,
+            style: TextStyle(
+              fontSize: screenWidth * 0.035,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        isFeedbackSubmitted
+            ? Text(
+          'Feedback Submitted',
+          style: TextStyle(
+            fontSize: screenWidth * 0.035,
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
+        )
+            : GestureDetector(
+          onTap: () {
+            // Ensure proper type conversion for requestJobHistoryId
+            final int requestJobHistoryId;
+            try {
+              requestJobHistoryId = request['requestJobHistoryId'] is String
+                  ? int.parse(request['requestJobHistoryId'])
+                  : request['requestJobHistoryId'] as int;
+            } catch (e) {
+              print('Error converting requestJobHistoryId: $e');
+              return;
+            }
+
+            final requestJob = RequestJob.fromJson({
+              'userName': request['name']?.toString() ?? 'Unknown User',
+              'Description': request['Description']?.toString() ?? 'No description',
+              'taskName': request['taskName']?.toString() ?? 'Unnamed Task',
+              // 'taskId': request['taskId']?.toString() ?? 'Unnamed TaskId',
+              'jobStatus': request['jobStatus']?.toString() ?? 'Unknown',
+              'requestJobHistoryId': requestJobHistoryId,
+            });
+
+            if (context.mounted) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext dialogContext) => ServicesRating(
+                  requestJobHistoryId: requestJobHistoryId,
+                  request: requestJob,
+                ),
+              ).then((_) {
+                if (mounted) {
+                  setState(() {
+                    request['feedback_status'] = true;
+                    _fetchGeneralRequests();
+                  });
+                }
+              });
+            }
+          },
+          child: Text(
+            'Feedback',
+            style: TextStyle(
+              fontSize: screenWidth * 0.035,
+              color: const Color(0xFF2A6E75),
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context)  {
@@ -710,6 +807,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
 
         // RefreshIndicator function
         body: RefreshIndicator(
+
           onRefresh: () async {
             if (_jobStatus) {
               await _fetchGeneralRequests();

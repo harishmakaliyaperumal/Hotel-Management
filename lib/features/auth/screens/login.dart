@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:holtelmanagement/common/helpers/constants.dart';
+// import 'package:holtelmanagement/features/auth/screens/auth_page.dart';
 import 'package:holtelmanagement/features/auth/widgets/login_button.dart';
 import 'package:holtelmanagement/features/customer/user_menu.dart';
 import 'package:holtelmanagement/features/kitchenMenu/screens/kitchendashboard.dart';
@@ -34,10 +35,6 @@ class _LoginPageState extends State<LoginPage> {
   final SharedPreferencesHelper _preferencesHelper = SharedPreferencesHelper();
 
   // final SharedPreferencesHelper _preferencesHelper = SharedPreferencesHelper();
-
-
-
-
   @override
   void initState() {
     super.initState();
@@ -55,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _login() async {
     setState(() => _isLoading = true);
     try {
-      final response = await ApiService().login(
+      final response = await ApiService(). login(
         _userEmailIdController.text,
         _passwordController.text,
       );
@@ -69,6 +66,8 @@ class _LoginPageState extends State<LoginPage> {
 
 
       await _preferencesHelper.saveLoginData(response);
+      final logindata =  await _preferencesHelper.getLoginData();
+      print(logindata);
 
       final userType = response['userType'];
       final userName = response['username'];

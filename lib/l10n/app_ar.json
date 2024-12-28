@@ -25,6 +25,7 @@
   "requested": "مطلوب",
   "ser_pg_com_his_text_request": "طلب",
   "ser_pg_history_card_text_location": "موقع",
+  "ser_pg_history_card_text_taskId": "معرف المهمة",
   "ser_pg_history_card_text_description": "وصف",
   "jobStatus": "jobStatus",
   "taskName": "اسم المهمة",

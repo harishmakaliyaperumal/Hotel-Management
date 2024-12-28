@@ -25,6 +25,7 @@
   "requested": "Requested",
   "ser_pg_com_his_text_request": "Request",
   "ser_pg_history_card_text_location": "Location",
+  "ser_pg_history_card_text_taskId": "TaskId",
   "ser_pg_history_card_text_description": "Description",
   "jobStatus": "jobStatus",
   "taskName": "taskName",

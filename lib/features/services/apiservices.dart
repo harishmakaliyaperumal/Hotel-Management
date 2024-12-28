@@ -3,6 +3,7 @@ import 'dart:ffi';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../common/helpers/shared_preferences_helper.dart';
 import '../../models/categorymodel.dart';
 import '../../utility/token.dart';
 import '../customer/customerhistorymodels/cus_his_models.dart';
@@ -11,11 +12,25 @@ import '../kitchenMenu/kitchen_models/data.dart';
 
 
 class ApiService {
+   final TokenProvider tokenProvider = TokenProvider();
   final String baseUrl = 'https://www.hotels.annulartech.net';
-  // Login functional
-  Future<Map<String, dynamic>> login(String userEmailId, String password,) async {
-    final String loginUrl = '$baseUrl/user/login';
+  // final SharedPreferencesHelper _prefsHelper = SharedPreferencesHelper();
 
+  // final String baseUrl = 'https://www.hotels.annulartech.net';
+   final SharedPreferencesHelper _prefsHelper;
+  final TokenProvider _tokenProvider;
+
+  ApiService({
+    SharedPreferencesHelper? prefsHelper,
+    TokenProvider? tokenProvider,
+  }) : _prefsHelper = prefsHelper ?? SharedPreferencesHelper(),
+        _tokenProvider = tokenProvider ?? TokenProvider();
+
+
+
+  // Login functional
+  Future<Map<String, dynamic>> login(String userEmailId, String password) async {
+    final String loginUrl = '$baseUrl/user/login';
     try {
       final response = await http.post(
         Uri.parse(loginUrl),
@@ -27,18 +42,32 @@ class ApiService {
           "userPassword": password,
         }),
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Successful login, return the response data (e.g., token or user info)
 
-        final tokenProvider = TokenProvider();
+        // Store login data including JWT in SharedPreferences
         if (data['jwt'] != null) {
-          await tokenProvider.saveToken(data['jwt']);
+          await _prefsHelper.saveLoginData({
+            'jwt': data['jwt'],
+            'token': data['token'], // This will be used as refresh token
+            'expiry': data['expiry'],
+            'id': data['id'],
+            'username': data['username'],
+            'userType': data['userType'],
+            'status': data['status'],
+            'roomNo': data['roomNo'],
+            'floorId': data['floorId'],
+          });
+
+          // Save token expiry separately for refresh checks
+          if (data['expiry'] != null) {
+            await _prefsHelper.saveTokenExpiry(data['expiry']);
+          }
         }
 
         return data;
       } else {
-        // Handle server errors
         return {
           'error': 'Failed to login. Status code: ${response.statusCode}',
           'details': response.body,
@@ -55,92 +84,138 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> fetchTasks() async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception('Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.get(
         Uri.parse('$baseUrl/request/getAllCustomerTaskData'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $currentJwt',
         },
       );
 
-      if (response.statusCode == 200) {
-        // Use utf8.decode to handle potential encoding issues
-        final responseBody = utf8.decode(response.bodyBytes);
-        final decodedResponse = jsonDecode(responseBody);
+      if (response.statusCode == 401) {
+        final newToken = await tokenProvider.refreshToken();
+        if (newToken == null) throw Exception('Token refresh failed');
 
-        if (decodedResponse['status'] == 1) {
-          List<dynamic> data = decodedResponse['data'];
-          // print('Task Data: $data'); // Debugging
-          return data.map((item) => item as Map<String, dynamic>).toList();
-        } else {
-          throw Exception('Failed to fetch tasks: ${decodedResponse['message']}');
-        }
-      } else if (response.statusCode == 401) {
-        throw Exception('Unauthorized access. Please log in again.');
-      } else {
-        throw Exception(
-            'Server returned ${response.statusCode}: ${response.body}');
+        return fetchTasks();
       }
+      print('Response Body: ${response.body}');
+      final responseBody = utf8.decode(response.bodyBytes);
+      final decodedResponse = jsonDecode(responseBody);
+
+      if (response.statusCode == 200 && decodedResponse['status'] == 1) {
+        List<dynamic> data = decodedResponse['data'];
+        return data.map((item) => item as Map<String, dynamic>).toList();
+      }
+
+      throw Exception('Failed to fetch tasks: ${decodedResponse['message'] ?? response.body}');
     } catch (e) {
       throw Exception('Error fetching tasks: $e');
     }
   }
 
-  Future<List<TaskCategoryModel>> fetchTaskCategories() async {
-    try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
+   Future<List<TaskCategoryModel>> fetchTaskCategories() async {
+     try {
+       final loginData = await _prefsHelper.getLoginData();
+       final jwt = loginData?['jwt'];
 
-      if (token == null) {
-        throw Exception('Authentication token is missing. Please log in again.');
-      }
+       if (jwt == null) {
+         throw Exception('Authentication token missing');
+       }
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/task/getAllTaskCategoryDetails'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+       final prefs = await SharedPreferences.getInstance();
 
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+       // Check if token needs refresh before making request
+       if (await tokenProvider.needsRefresh()) {
+         final newJwt = await tokenProvider.refreshToken();
+         if (newJwt == null) {
+           throw Exception('Token refresh failed');
+         }
+       }
 
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = json.decode(response.body);
-        return jsonList
-            .map((json) => TaskCategoryModel.fromJson(json))
-            .toList();
-      } else {
-        throw Exception('Failed to load task categories');
-      }
-    } catch (e) {
-      print('Error in fetchTaskCategories: $e');
-      rethrow;
-    }
-  }
+       // Get fresh JWT after potential refresh
+       final currentLoginData = await _prefsHelper.getLoginData();
+       final currentJwt = currentLoginData?['jwt'];
+
+       final response = await http.get(
+         Uri.parse('$baseUrl/task/getAllTaskCategoryDetails'),
+         headers: {
+           'Content-Type': 'application/json',
+           'Authorization': 'Bearer $currentJwt',
+         },
+       );
+
+       if (response.statusCode == 401) {
+         final newToken = await tokenProvider.refreshToken();
+         if (newToken == null) throw Exception('Token refresh failed');
+
+         return fetchTaskCategories();
+       }
+
+       final decodedResponse = jsonDecode(response.body);
+
+       if (response.statusCode == 200) {
+         final List<dynamic> jsonList = json.decode(response.body);
+         return jsonList
+             .map((json) => TaskCategoryModel.fromJson(json))
+             .toList();
+       } else {
+         throw Exception('Failed to load task categories');
+       }
+     } catch (e) {
+       print('Error in fetchTaskCategories: $e');
+       rethrow;
+     }
+   }
 
   Future<List<TaskSubcategoryModel>> fetchTaskSubcategories(int taskCategoryId) async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception('Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.get(
         Uri.parse('$baseUrl/task/getTaskCategoryListById?taskCategoryId=$taskCategoryId'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $currentJwt',
         },
       );
 
@@ -170,24 +245,35 @@ class ApiService {
     }
   }
 
-
-
-
   // Similar modifications for fetchCustomerTasks
   Future<List<CustomerTaskModel>> fetchCustomerTasks(int taskSubCategoryId) async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception('Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.get(
         Uri.parse('$baseUrl/task/getAllTaskNameBySubCategoryById?taskSubCategoryId=$taskSubCategoryId'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $currentJwt',
         },
       );
 
@@ -240,14 +326,26 @@ class ApiService {
     String? descriptionArabian,
   }) async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception(
-
-            'Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       // Prepare the request body with conditional description fields
       final body = {
@@ -273,7 +371,7 @@ class ApiService {
         Uri.parse('$baseUrl/request/saveGeneralRequest'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
         body: jsonEncode(body),
       );
@@ -307,14 +405,26 @@ class ApiService {
     String? descriptionArabian,
   }) async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception(
-
-            'Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       // Prepare the request body with conditional description fields
       final body = {
@@ -348,7 +458,7 @@ class ApiService {
         Uri.parse('$baseUrl/request/saveGeneralRequest'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
         body: jsonEncode(body),
       );
@@ -373,19 +483,32 @@ class ApiService {
   Future<void> notifyBreaks(int userId) async {
     // final String url = '$baseUrl/break/saveBreakDetails';
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception(
-            'Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.post(
         Uri.parse('$baseUrl/break/saveBreakDetails'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
         body: jsonEncode({
           'userId': userId,
@@ -405,20 +528,32 @@ class ApiService {
 
   Future<List<dynamic>> getAllBreakRequests() async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception(
-            'Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
-      // final String getallbreakrequestUrl = '$baseUrl/break/getBreakRequstById';
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.get(
         Uri.parse('$baseUrl/break/getBreakRequstById'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
       );
 
@@ -437,13 +572,26 @@ class ApiService {
 
   Future<Map<String, dynamic>> updateJobStatus(bool jobStatus, String userId) async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception(
-            'Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       // final prefs = await SharedPreferences.getInstance();
       // final String? token = prefs.getString('jwt');
@@ -452,7 +600,7 @@ class ApiService {
       final response = await http.post(
         url,
         headers: {
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $currentJwt',
           'Content-Type': 'application/json',
         },
 
@@ -474,214 +622,202 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> getGeneralRequestsById() async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception(
-            'Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
-      // Get the JWT token from SharedPreferences
+
       final prefs = await SharedPreferences.getInstance();
-      // Make the GET request
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
+
       final response = await http.get(
-        Uri.parse('$baseUrl/hotelapp/getGeneralRequestById'),
+        Uri.parse('https://www.hotels.annulartech.net/hotelapp/getGeneralRequestById'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt", // Add JWT in Authorization header
         },
       );
 
-      // Check the status code and log the response
-      // print('Response Status Code: ${response.statusCode}');
-      // print('Response Body: ${response.body}');
+      final responseBody = utf8.decode(response.bodyBytes);
+      print('Response Body: $responseBody'); // Debug log
+
+      final decodedResponse = jsonDecode(responseBody);
 
       if (response.statusCode == 200) {
-        // Parse the response body
-        final decodedResponse = json.decode(response.body);
+        final status = decodedResponse['status'];
+        print('Response Status: $status'); // Debug log
 
-        // If the response is a Map, convert it to a List
-        if (decodedResponse is Map<String, dynamic>) {
-          if (decodedResponse.containsKey('data') &&
-              decodedResponse['data'] is List) {
-            final List<dynamic> jsonResponse = decodedResponse['data'];
-
-            // Convert each item in the list to a Map with proper type handling
-            final List<Map<String, dynamic>> typedData =
-            jsonResponse.map((item) {
-              // print('descrittionNorweign: ${item['descrittionNorweign']}');
-              // print(item);
-
+        if (status == 1) {
+          if (decodedResponse['data'] is List) {
+            final List jsonResponse = decodedResponse['data'];
+            final typedData = jsonResponse.map((item) {
               return {
                 'id': item['id']?.toString() ?? '',
                 'userName': item['userName']?.toString() ?? '',
                 'taskName': item['taskName']?.toString() ?? '',
                 'Description': item['Description']?.toString() ?? '',
-                'DescriptionNorweign': item['DescriptionNorweign']
-                    ?.toString() ?? '',
+                'DescriptionNorweign': item['DescriptionNorweign']?.toString() ?? '',
                 'name': item['name']?.toString() ?? '',
                 'roomName': item['roomName']?.toString() ?? '',
                 'jobStatus': item['jobStatus']?.toString() ?? '',
                 'roomId': item['roomId']?.toString() ?? '',
                 'nextJobStatus': item['nextJobStatus']?.toString() ?? '',
-                'requestJobHistoryId':
-                item['requestJobHistoryId']?.toString() ?? '',
+                'requestJobHistoryId': item['requestJobHistoryId']?.toString() ?? '',
                 'flag': item['flag']?.toString() ?? '',
               };
             }).toList();
-            // Store the response in SharedPreferences
+
+            // Cache successful response
             await prefs.setString('generalRequests', json.encode(typedData));
-
-
-            // print('Processed ${typedData.length} requests');
             return typedData;
           } else {
-            throw Exception('Unexpected response format: No data found.');
+            throw Exception('Unexpected response format or missing data field.');
           }
         } else {
-          throw Exception(
-              'Expected a Map but got ${decodedResponse.runtimeType}');
+          throw Exception('Unexpected status: $status');
         }
       } else {
         throw Exception('Failed to fetch data: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in getGeneralRequestsById: $e');
+      // Try to return cached data if available
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final cachedData = prefs.getString('generalRequests');
+        if (cachedData != null) {
+          return List<Map<String, dynamic>>.from(
+              jsonDecode(cachedData).map((item) => Map<String, dynamic>.from(item))
+          );
+        }
+      } catch (cacheError) {
+        print('Error retrieving cached data: $cacheError');
+      }
       throw Exception('Failed to fetch general requests: $e');
     }
   }
 
+
   Future<void> Statusupdate(int userId, String jobStatus,
       String requestJobHistoryId) async {
-    final tokenProvider = TokenProvider();
-    final token = await tokenProvider.getToken();
-    // final prefs = await SharedPreferences.getInstance();
-    // final String? token = prefs.getString('jwt');
-
-    // final String statusupdateUrl = '$baseUrl/hotelapp/updateRequstJobStatus?userId=$userId&jobStatus=$jobStatus&requestJobHistoryId=$requestJobHistoryId';
-    final response = await http.put(
-      Uri.parse(
-          '$baseUrl/hotelapp/updateRequstJobStatus?userId=$userId&jobStatus=$jobStatus&requestJobHistoryId=$requestJobHistoryId'),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({
-        "userId": userId,
-        "jobStatus": jobStatus,
-        "requestJobHistoryId": requestJobHistoryId,
-      }),
-    );
-
-
-    // print('Response Body: ${response.body}');
-    if (response.statusCode == 200) {
-      print("Task updated successfully");
-    } else {
-      print("Failed to update task: ${response.body}");
-      throw Exception('Failed to update task');
-    }
-  }
-
-  // Future<List<Map<String,dynamic>>> getCustomerRequestsById() async {
-  //   try {
-  //     final tokenProvider = TokenProvider();
-  //     final token = await tokenProvider.getToken();
-  //
-  //     if (token == null) {
-  //       print('Authentication token is missing. Please log in again.');
-  //       return [];
-  //     }
-  //
-  //     final prefs = await SharedPreferences.getInstance();
-  //
-  //     final response = await http.get(
-  //       Uri.parse('$baseUrl/hotelapp/getByCustomerRequestById'),
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         "Authorization": "Bearer $token",
-  //       },
-  //     );
-  //
-  //     if (response.statusCode == 200) {
-  //       // Decode response body with UTF-8
-  //       final responseBody = utf8.decode(response.bodyBytes);
-  //       final Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
-  //
-  //       if (jsonResponse.containsKey('data') && jsonResponse['data'] is List) {
-  //         // Parse data into a typed list of maps
-  //         final List<Map<String, dynamic>> typedData =
-  //         (jsonResponse['data'] as List).map((item) {
-  //           return {
-  //             'requestDataId': item['requestDataId']?.toString(),
-  //             'rname': item['rname'] ?? 'Unknown',
-  //             'taskName': item['taskName'] ?? 'Unknown Task',
-  //             'taskNorweign': item['taskNorweign'] ?? 'Unknown Task',
-  //             'taskArabian': item['taskArabian'] ?? 'Unknown Task',
-  //             'description': item['description'] ?? '',
-  //             'descriptionNorweign': item['descriptionNorweign'] ?? '',
-  //             'descriptionArabian': item['descriptionArabian'] ?? '',
-  //             'starttime': item['starttime'] ?? '',
-  //             'endTime': item['endTime'] ?? '',
-  //             'jobStatus': item['jobStatus'] ?? '',
-  //             'floorName': item['floorName'] ?? 'Unknown Floor',
-  //             'requestDataIsActive': item['requestDataIsActive'] ?? false,
-  //           };
-  //         }).toList();
-  //
-  //         // Cache the response data
-  //         await prefs.setString('customerRequests', jsonEncode(typedData));
-  //         return typedData;
-  //       } else {
-  //         print('Unexpected response structure: $jsonResponse');
-  //         return [];
-  //       }
-  //     } else {
-  //       print('Failed to fetch data. HTTP Status: ${response.statusCode}');
-  //       return [];
-  //     }
-  //   } catch (e) {
-  //     print('Error in getCustomerRequestsById: $e');
-  //
-  //     // Attempt to use cached data
-  //     final prefs = await SharedPreferences.getInstance();
-  //     final cachedRequestsString = prefs.getString('customerRequests');
-  //     if (cachedRequestsString != null) {
-  //       try {
-  //         final List<dynamic> cachedRequests = jsonDecode(cachedRequestsString);
-  //         return cachedRequests.cast<Map<String, dynamic>>();
-  //       } catch (cacheError) {
-  //         print('Error parsing cached requests: $cacheError');
-  //       }
-  //     }
-  //
-  //     return [];
-  //   }
-  // }
-
-
-  // model with histoiry
-  Future<List<CustomerRequest>> getCustomerRequestsById() async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        print('Authentication token is missing. Please log in again.');
-        return [];
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
 
       final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
+      final response = await http.put(
+        Uri.parse(
+            '$baseUrl/hotelapp/updateRequstJobStatus?userId=$userId&jobStatus=$jobStatus&requestJobHistoryId=$requestJobHistoryId'),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $currentJwt",
+        },
+        body: jsonEncode({
+          "userId": userId,
+          "jobStatus": jobStatus,
+          "requestJobHistoryId": requestJobHistoryId,
+        }),
+      );
+
+      final responseBody = utf8.decode(response.bodyBytes);
+      print('Response Body: $responseBody'); // Debug log
+
+      final decodedResponse = jsonDecode(responseBody);
+
+      // print('Response Body: ${response.body}');
+      if (response.statusCode == 200) {
+        final status = decodedResponse['status'];
+        print("Task updated successfully");
+        print('Response Status: $status');
+      } else {
+        print("Failed to update task: ${response.body}");
+        throw Exception('Failed to update task');
+      }
+    }
+    catch (e) {
+      print('Error in getGeneralRequestsById: $e');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+
+      } catch (cacheError) {
+        print('Error retrieving cached data: $cacheError');
+      }
+      throw Exception('Failed to fetch general requests: ');
+    }
+  }
+
+
+  Future<List<CustomerRequest>> getCustomerRequestsById() async {
+    try {
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
+
+
 
       final response = await http.get(
         Uri.parse('$baseUrl/hotelapp/getByCustomerRequestById'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 401) {
+        final newToken = await tokenProvider.refreshToken();
+        if (newToken == null) throw Exception('Token refresh failed');
+
+        return getCustomerRequestsById();
+      }
+      final responseBody = utf8.decode(response.bodyBytes);
+      final decodedResponse = jsonDecode(responseBody);
+
+      if (response.statusCode == 200 && decodedResponse['status'] == 1) {
         final responseBody = utf8.decode(response.bodyBytes);
         final Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
 
@@ -723,14 +859,30 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> fetchRestaurants() async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
+      }
 
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
       final response = await http.get(
         Uri.parse('$baseUrl/admin/restaurant/getAllRestaurant'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
       );
       // print('Restaurant details: $restaurantId');
@@ -760,6 +912,7 @@ class ApiService {
               'image': mediaFiles.isNotEmpty ? mediaFiles : null,
             };
           }).toList();
+
         }
       }
 
@@ -771,54 +924,36 @@ class ApiService {
     }
   }
 
-  // Future<List<CategoryModel>> getAllCategories(String restaurantId) async {
-  //   try {
-  //     final tokenProvider = TokenProvider();
-  //     final token = await tokenProvider.getToken();
-  //
-  //     if (token == null) {
-  //       throw Exception(
-  //           'Authentication token is missing. Please log in again.');
-  //     }
-  //
-  //     final response = await http.get(
-  //       Uri.parse('$baseUrl/admin/restaurant/getAllRestaurantCategoryById?$restaurantId'),
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         "Authorization": "Bearer $token",
-  //       },
-  //     );
-  //
-  //     if (response.statusCode == 200) {
-  //       final jsonResponse = jsonDecode(response.body);
-  //       if (jsonResponse['status'] == 1 && jsonResponse['data'] != null) {
-  //         final categoriesJson = jsonResponse['data']['categories'] as List;
-  //         return categoriesJson
-  //             .map((categoryJson) => CategoryModel.fromJson(categoryJson))
-  //             .toList();
-  //       }
-  //     }
-  //     return []; // Return empty list if any condition fails
-  //   } catch (e) {
-  //     print('Error fetching categories: $e');
-  //     return []; // Return empty list on error
-  //   }
-  // }
+
 
   Future<List<CategoryModel>> fetchCategoriesByRestaurantId(int restaurantId) async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception('Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.get(
         Uri.parse('$baseUrl/admin/restaurant/getAllRestaurantCategoryById?restaurantId=$restaurantId'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $currentJwt',
         },
       );
 
@@ -847,18 +982,32 @@ class ApiService {
 
   Future<List<SubCategoryModels>> fetchAllRestaurantSubCategoryById(int restaurantMenuCategoriesId) async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception('Authentication token is missing. Please log in again.');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.get(
         Uri.parse('$baseUrl/admin/restaurant/getAllRestaurantSubCategoryById?restaurantSubCategoryId=$restaurantMenuCategoriesId'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $currentJwt',
         },
       );
 
@@ -884,56 +1033,37 @@ class ApiService {
     }
   }
 
-  // Future<List<FoodMenuModels>> fetchAllRestaurantFoodmenuById(int restaurantMenuSubCategoriesId) async {
-  //   try {
-  //     final tokenProvider = TokenProvider();
-  //     final token = await tokenProvider.getToken();
-  //
-  //     if (token == null) {
-  //       throw Exception('Authentication token is missing. Please log in again.');
-  //     }
-  //
-  //     final response = await http.get(
-  //       Uri.parse('$baseUrl/admin/restaurant/getAllRestaurantSubCategoryById?restaurantSubCategoryId=$restaurantMenuSubCategoriesId'),
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': 'Bearer $token',
-  //       },
-  //     );
-  //
-  //     print('Response Status Code: ${response.statusCode}');
-  //     print('Response Body: ${response.body}');
-  //
-  //     if (response.statusCode == 200) {
-  //       List<dynamic> jsonList = json.decode(response.body);
-  //
-  //       print('Parsed JSON list length: ${jsonList.length}');
-  //
-  //       return jsonList.map((json) {
-  //         print('Processing JSON: $json');
-  //         return FoodMenuModels.fromJson(json);
-  //       }).toList();
-  //     } else {
-  //       throw Exception('Failed to load categories. Status code: ${response.statusCode}, Body: ${response.body}');
-  //     }
-  //   } catch (e, stackTrace) {
-  //     print('Detailed error fetching categories: $e');
-  //     print('Stacktrace: $stackTrace');
-  //     rethrow;
-  //   }
-  // }
+
 
 
   Future<List<Map<String, dynamic>>> fetchFoodMenu(int restaurantMenuSubCategoriesId) async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.get(
         Uri.parse('$baseUrl/admin/restaurantMenu/getRestaurantMenuSubCategories?restaurantMenuSubCatagoriesId=$restaurantMenuSubCategoriesId'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
       );
 
@@ -975,18 +1105,32 @@ class ApiService {
 
   Future<List<KitchenRequest>> getAllRequestKitchen() async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
+      }
 
-      // if (token == null) {
-      //   throw Exception('Authentication token is missing. Please log in again.');
-      // }
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.get(
         Uri.parse('$baseUrl/hotelapp/getAllRestaurantOrders'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
       );
 
@@ -1018,18 +1162,32 @@ class ApiService {
 
   Future<String?> updateRequestStatus(int restaurantOrderId, String requestOrderStatus) async {
     try {
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
-
-      if (token == null) {
-        throw Exception('Authentication token is missing');
+      // Get login data from _prefsHelper
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
       final response = await http.post(
         Uri.parse('$baseUrl/hotelapp/updateRestaurantOrders'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
         body: jsonEncode({
           "restaurantOrderId": restaurantOrderId,
@@ -1055,18 +1213,32 @@ class ApiService {
 
   Future<void> StatusupdateRatting(String requestDataId, String ratingComment,
       int rating) async {
-    final tokenProvider = TokenProvider();
-    final token = await tokenProvider.getToken();
-    // final prefs = await SharedPreferences.getInstance();
-    // final String? token = prefs.getString('jwt');
+    // Get login data from _prefsHelper
+    final loginData = await _prefsHelper.getLoginData();
+    final jwt = loginData?['jwt'];
+    if (jwt == null) {
+      throw Exception('Authentication token missing');
+    }
 
-    // final String statusupdateUrl = '$baseUrl/hotelapp/updateRequstJobStatus?userId=$userId&jobStatus=$jobStatus&requestJobHistoryId=$requestJobHistoryId';
+    final prefs = await SharedPreferences.getInstance();
+
+    // Check if token needs refresh before making request
+    if (await tokenProvider.needsRefresh()) {
+      final newJwt = await tokenProvider.refreshToken();
+      if (newJwt == null) {
+        throw Exception('Token refresh failed');
+      }
+    }
+
+    // Get fresh JWT after potential refresh
+    final currentLoginData = await _prefsHelper.getLoginData();
+    final currentJwt = currentLoginData?['jwt'];
     final response = await http.put(
       Uri.parse(
           '$baseUrl/hotelapp/updateRating?rating=$rating&ratingComment=$ratingComment&requestDataId=$requestDataId'),
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
+        "Authorization": "Bearer $currentJwt",
       },
 
     );
@@ -1081,79 +1253,60 @@ class ApiService {
     }
   }
 
-
-
-
-
-  // Future<void> submitCustomerFeedback(int requestJobHistoryId, int rating, String ratingComment) async {
-  //   final tokenProvider = TokenProvider();
-  //   final token = await tokenProvider.getToken();
-  //   // final prefs = await SharedPreferences.getInstance();
-  //   // final String? token = prefs.getString('jwt');
-  //
-  //   // final String statusupdateUrl = '$baseUrl/hotelapp/updateRequstJobStatus?userId=$userId&jobStatus=$jobStatus&requestJobHistoryId=$requestJobHistoryId';
-  //   final response = await http.put(
-  //     Uri.parse(
-  //         '$baseUrl/hotelapp/updateServiceRating?rating=$rating&ratingComment=$ratingComment&requestJobHistoryId=$requestJobHistoryId'),
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       "Authorization": "Bearer $token",
-  //     },
-  //
-  //   );
-  //
-  //
-  //   // print('Response Body: ${response.body}');
-  //   if (response.statusCode == 200) {
-  //     print("Task updated successfully");
-  //   } else {
-  //     print("Failed to update task: ${response.body}");
-  //     throw Exception('Failed to update task');
-  //   }
-  // }
-
-
-
   Future<List<RequestJob>> getServicesRequestsById() async {
 
-      // Retrieve the authentication token
-      final tokenProvider = TokenProvider();
-      final token = await tokenProvider.getToken();
+    // Retrieve the authentication token
+    final tokenProvider = TokenProvider();
+    final token = await tokenProvider.getToken();
 
-      if (token == null) {
-        print('Authentication token is missing. Please log in again.');
-        return [];
-      }
+    if (token == null) {
+      print('Authentication token is missing. Please log in again.');
+      return [];
+    }
 
-      // Make the API request
-      final response = await http.get(
-        Uri.parse('$baseUrl/hotelapp/getGeneralRequestById'),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
-      // print(response.body);
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        print(data);  // Check if the data is being parsed correctly
+    // Make the API request
+    final response = await http.get(
+      Uri.parse('$baseUrl/hotelapp/getGeneralRequestById'),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+    // print(response.body);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      print(data);  // Check if the data is being parsed correctly
 
-        final List<dynamic> requests = data['data'] ?? [];
-        return requests.map((json) => RequestJob.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load requests: ${response.body}');
-      }
+      final List<dynamic> requests = data['data'] ?? [];
+      return requests.map((json) => RequestJob.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load requests: ${response.body}');
+    }
 
   }
 
 
-
-
-
   Future<void> submitCustomerFeedback(String requestJobHistoryId, String ratingComment, double rating) async {
-    final tokenProvider = TokenProvider();
-    final token = await tokenProvider.getToken();
+    // Get login data from _prefsHelper
+    final loginData = await _prefsHelper.getLoginData();
+    final jwt = loginData?['jwt'];
+    if (jwt == null) {
+      throw Exception('Authentication token missing');
+    }
 
+    final prefs = await SharedPreferences.getInstance();
+
+    // Check if token needs refresh before making request
+    if (await tokenProvider.needsRefresh()) {
+      final newJwt = await tokenProvider.refreshToken();
+      if (newJwt == null) {
+        throw Exception('Token refresh failed');
+      }
+    }
+
+    // Get fresh JWT after potential refresh
+    final currentLoginData = await _prefsHelper.getLoginData();
+    final currentJwt = currentLoginData?['jwt'];
     if (requestJobHistoryId.isEmpty) {
       throw Exception('Request Job History ID cannot be empty');
     }
@@ -1172,7 +1325,7 @@ class ApiService {
         ),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
+          "Authorization": "Bearer $currentJwt",
         },
       );
 

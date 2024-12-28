@@ -7,4 +7,6 @@ class AppConstants{
   static const slide_img_2 ='assets/images/foods/food_services_slide_img-2.png';
   static const slide_img_3 ='assets/images/foods/food_services_slide_img-3.png';
 
+
+
 }

@@ -19,7 +19,7 @@ class EmailField extends StatelessWidget {
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.supervised_user_circle_outlined, color: Colors.black),
         hintText: AppLocalizations.of(context).translate('login_pg_form_filed_userEmailId'),
-        hintStyle: const TextStyle(color: Colors.black),
+        hintStyle: const TextStyle(color: Colors.grey),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(color:AppColors.backgroundColor, width: 1.5),

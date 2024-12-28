@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:holtelmanagement/features/auth/screens/login.dart';
-
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'classes/ LanguageProvider.dart';
 import 'classes/language.dart';
-
 import 'common/helpers/shared_preferences_helper.dart';
 import 'features/customer/user_menu.dart';
 import 'features/dashboard/services/services_page_screens/servicedashboard.dart';
 import 'features/kitchenMenu/screens/kitchendashboard.dart';
 import 'l10n/app_localizations.dart';
+// import 'common/helpers/token_provider.dart';
 
 
 
@@ -19,6 +18,8 @@ void main() async {
 
   // Initialize SharedPreferences helper
   final prefsHelper = SharedPreferencesHelper();
+
+
 
   // Check authentication and get user type
   final loginData = await prefsHelper.getLoginData();
@@ -30,7 +31,6 @@ void main() async {
     // final userId = loginData['id'];
     // final roomNo = int.tryParse(loginData['roomNo']?.toString() ?? '0') ?? 0;
     // final floorId = int.tryParse(loginData['floorId']?.toString() ?? '0') ?? 0;
-
     switch (userType) {
       case 'CUSTOMER':
         initialRoute = '/customer';

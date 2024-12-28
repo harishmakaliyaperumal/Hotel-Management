@@ -1,93 +1,79 @@
-import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../common/helpers/shared_preferences_helper.dart';
 
 class TokenProvider {
-  static final TokenProvider _instance = TokenProvider._internal();
-  factory TokenProvider() => _instance;
-  TokenProvider._internal();
-
   final String baseUrl = 'https://www.hotels.annulartech.net';
-  static const String _tokenKey = 'jwt';
-  static const String _tokenExpiryKey = 'token_expiry';
-  bool _isRefreshing = false;
+  final SharedPreferencesHelper _prefsHelper = SharedPreferencesHelper();
 
-  Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(_tokenKey);
-    final expiryString = prefs.getString(_tokenExpiryKey);
 
-    if (token == null || expiryString == null) {
-      return null;
-    }
-
-    final expiry = DateTime.parse(expiryString);
-    final now = DateTime.now();
-
-    // If token is about to expire in next 2 minutes, refresh it
-    if (now.isAfter(expiry.subtract(Duration(minutes: 2)))) {
-      return refreshToken();
-    }
-
-    return token;
-  }
-
-  Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
-
-    // Set token expiry to 10 minutes from now
-    final expiry = DateTime.now().add(Duration(minutes: 10));
-    await prefs.setString(_tokenExpiryKey, expiry.toIso8601String());
-  }
-
-  Future<void> clearToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_tokenExpiryKey);
-  }
 
   Future<String?> refreshToken() async {
-    if (_isRefreshing) {
-      // Wait for the existing refresh to complete
-      await Future.delayed(Duration(seconds: 1));
-      return getToken();
-    }
-
-    _isRefreshing = true;
     try {
-      final currentToken = await getToken();
-      if (currentToken == null) {
-        _isRefreshing = false;
-        return null;
+      // Get the refresh token (stored as 'token' during login)
+      final loginData = await _prefsHelper.getLoginData();
+      final refreshToken = loginData?['token'];  // Get the actual refresh token
+
+      if (refreshToken == null) {
+        throw Exception('No refresh token found');
       }
+
+      print('Using refresh token: $refreshToken'); // Debug print
 
       final response = await http.post(
         Uri.parse('$baseUrl/user/refreshToken'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $currentToken',
-        },
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'token': refreshToken,  // Pass the actual refresh token
+        }),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['jwt'] != null) {
-          await saveToken(data['jwt']);
-          _isRefreshing = false;
-          return data['jwt'];
-        }
-      }
+      print('Refresh token response: ${response.body}'); // Debug print
 
-      // If refresh failed, clear the token
-      await clearToken();
-      _isRefreshing = false;
-      return null;
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data['jwt'] != null) {
+          // Update only the JWT while preserving other data
+          final existingData = await _prefsHelper.getLoginData() ?? {};
+          await _prefsHelper.saveLoginData({
+            ...existingData,
+            'jwt': data['jwt'],
+          });
+
+          return data['jwt'];
+        } else {
+          throw Exception('No JWT in refresh response');
+        }
+      } else {
+        throw Exception('Failed to refresh token: ${response.body}');
+      }
     } catch (e) {
       print('Error refreshing token: $e');
-      _isRefreshing = false;
+      await clearToken();
       return null;
     }
+  }
+
+  Future<String?> getToken() async {
+    return await _prefsHelper.getToken();
+  }
+
+  Future<void> setToken(String token) async {
+    await _prefsHelper.saveToken(token);
+  }
+
+  Future<void> clearToken() async {
+    await _prefsHelper.clearLoginData();
+  }
+
+  Future<bool> needsRefresh() async {
+    final expiry = await _prefsHelper.getTokenExpiry();
+    if (expiry == null) return true;
+
+    final bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+    return DateTime.now().millisecondsSinceEpoch + bufferTime >= expiry;
   }
 }
