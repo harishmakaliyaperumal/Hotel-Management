@@ -1,11 +1,12 @@
 import 'dart:convert';
-import 'dart:ffi';
-import 'package:http/http.dart' as http;
+// import 'dart:ffi';
+import 'package:http/http.dart' as http;import 'dart:ffi';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../common/helpers/shared_preferences_helper.dart';
 import '../../models/categorymodel.dart';
 import '../../utility/token.dart';
+import '../customer/cus_model/otherservices_models.dart';
 import '../customer/customerhistorymodels/cus_his_models.dart';
 import '../dashboard/services/services_models/ser_models.dart';
 import '../kitchenMenu/kitchen_models/data.dart';
@@ -1342,6 +1343,34 @@ class ApiService {
       rethrow; // Re-throw to allow the UI to handle the error
     }
   }
+
+
+
+
+   Future<AllServices> getallotherservices(String userType) async {
+     final tokenProvider = TokenProvider();
+     final token = await tokenProvider.getToken();
+
+     if (token == null) {
+       throw Exception('Authentication token is missing. Please log in again.');
+     }
+
+     final response = await http.get(
+       Uri.parse('$baseUrl/otherService/getAllOtherServiceData?userType=$userType'),
+       headers: {
+         "Content-Type": "application/json",
+         "Authorization": "Bearer $token",
+       },
+     );
+
+     if (response.statusCode == 200) {
+       final data = json.decode(response.body);
+       return AllServices.fromJson(data);
+     } else {
+       throw Exception('Failed to load services: ${response.body}');
+     }
+   }
+
 
 }
 

@@ -56,6 +56,7 @@
   "user_menu_pg_htext": "Welcome to User Menu",
   "user_menu_card_Htext_RS": "REQUEST SERVICES",
   "user_menu_card_Htext_FS": "FOOD SERVICES",
+  "user_menu_card_Htext_OS": "OTHER SERVICES",
   "user_categories_pg_appbar_text":"Categories",
   "cus_pg_subcategories_text_name": "Categories",
   "cus_pg_subcategories_text_description": "Description",

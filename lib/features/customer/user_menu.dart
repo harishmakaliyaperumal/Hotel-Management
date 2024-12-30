@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:holtelmanagement/common/helpers/app_bar.dart';
+import 'package:holtelmanagement/features/customer/customer_other_services/other_services.dart';
 
 // import 'package:holtelmanagement/features/customer/food/userpage_food_categories.dart';
 // import 'package:holtelmanagement/features/customer/services/user_page_requset_services.dart';
@@ -327,6 +328,66 @@ class _UserMenuState extends State<UserMenu> {
                 ),
               ),
               const SizedBox(height: 40),
+
+
+              Card(
+                color: Color(0x882F919B),
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  side: BorderSide(
+                    color: Color(0xFF2A6E75), // Consistent border color
+                    width: 2.0,
+                  ),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>OtherServices ()
+                      ),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      // Right Side Image
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage('assets/images/request_services_image.png'), // Replace with your image
+                              fit: BoxFit.cover,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            AppLocalizations.of(context)
+                                .translate('user_menu_card_Htext_OS'),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              // color: Color(0xFF2A6E75),
+                              // color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
+
 
               // Order History Section
               Row(

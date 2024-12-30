@@ -524,12 +524,12 @@ class _UserDashboardState extends State<UserDashboard> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                             borderSide: const BorderSide(
-                                color: Color(0xffB5E198), width: 1.5),
+                                color: Color(0xff7e7c7c), width: 1.5),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(15),
                             borderSide: const BorderSide(
-                                color: Color(0xffB5E198), width: 1.5),
+                                color: Color(0xff7e7c7c), width: 1.5),
                           ),
                           alignLabelWithHint: true,
                         ),
