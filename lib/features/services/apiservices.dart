@@ -1,6 +1,6 @@
 import 'dart:convert';
 // import 'dart:ffi';
-import 'package:http/http.dart' as http;import 'dart:ffi';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../common/helpers/shared_preferences_helper.dart';
