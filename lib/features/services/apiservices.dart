@@ -13,12 +13,12 @@ import '../kitchenMenu/kitchen_models/data.dart';
 
 
 class ApiService {
-   final TokenProvider tokenProvider = TokenProvider();
+  final TokenProvider tokenProvider = TokenProvider();
   final String baseUrl = 'https://www.hotels.annulartech.net';
   // final SharedPreferencesHelper _prefsHelper = SharedPreferencesHelper();
 
   // final String baseUrl = 'https://www.hotels.annulartech.net';
-   final SharedPreferencesHelper _prefsHelper;
+  final SharedPreferencesHelper _prefsHelper;
   final TokenProvider _tokenProvider;
 
   ApiService({
@@ -135,59 +135,59 @@ class ApiService {
     }
   }
 
-   Future<List<TaskCategoryModel>> fetchTaskCategories() async {
-     try {
-       final loginData = await _prefsHelper.getLoginData();
-       final jwt = loginData?['jwt'];
+  Future<List<TaskCategoryModel>> fetchTaskCategories() async {
+    try {
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
 
-       if (jwt == null) {
-         throw Exception('Authentication token missing');
-       }
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
+      }
 
-       final prefs = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
-       // Check if token needs refresh before making request
-       if (await tokenProvider.needsRefresh()) {
-         final newJwt = await tokenProvider.refreshToken();
-         if (newJwt == null) {
-           throw Exception('Token refresh failed');
-         }
-       }
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
 
-       // Get fresh JWT after potential refresh
-       final currentLoginData = await _prefsHelper.getLoginData();
-       final currentJwt = currentLoginData?['jwt'];
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
-       final response = await http.get(
-         Uri.parse('$baseUrl/task/getAllTaskCategoryDetails'),
-         headers: {
-           'Content-Type': 'application/json',
-           'Authorization': 'Bearer $currentJwt',
-         },
-       );
+      final response = await http.get(
+        Uri.parse('$baseUrl/task/getAllTaskCategoryDetails'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $currentJwt',
+        },
+      );
 
-       if (response.statusCode == 401) {
-         final newToken = await tokenProvider.refreshToken();
-         if (newToken == null) throw Exception('Token refresh failed');
+      if (response.statusCode == 401) {
+        final newToken = await tokenProvider.refreshToken();
+        if (newToken == null) throw Exception('Token refresh failed');
 
-         return fetchTaskCategories();
-       }
+        return fetchTaskCategories();
+      }
 
-       final decodedResponse = jsonDecode(response.body);
+      final decodedResponse = jsonDecode(response.body);
 
-       if (response.statusCode == 200) {
-         final List<dynamic> jsonList = json.decode(response.body);
-         return jsonList
-             .map((json) => TaskCategoryModel.fromJson(json))
-             .toList();
-       } else {
-         throw Exception('Failed to load task categories');
-       }
-     } catch (e) {
-       print('Error in fetchTaskCategories: $e');
-       rethrow;
-     }
-   }
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList
+            .map((json) => TaskCategoryModel.fromJson(json))
+            .toList();
+      } else {
+        throw Exception('Failed to load task categories');
+      }
+    } catch (e) {
+      print('Error in fetchTaskCategories: $e');
+      rethrow;
+    }
+  }
 
   Future<List<TaskSubcategoryModel>> fetchTaskSubcategories(int taskCategoryId) async {
     try {
@@ -1347,29 +1347,29 @@ class ApiService {
 
 
 
-   Future<AllServices> getallotherservices(String userType) async {
-     final tokenProvider = TokenProvider();
-     final token = await tokenProvider.getToken();
+  Future<AllServices> getallotherservices(String userType) async {
+    final tokenProvider = TokenProvider();
+    final token = await tokenProvider.getToken();
 
-     if (token == null) {
-       throw Exception('Authentication token is missing. Please log in again.');
-     }
+    if (token == null) {
+      throw Exception('Authentication token is missing. Please log in again.');
+    }
 
-     final response = await http.get(
-       Uri.parse('$baseUrl/otherService/getAllOtherServiceData?userType=$userType'),
-       headers: {
-         "Content-Type": "application/json",
-         "Authorization": "Bearer $token",
-       },
-     );
+    final response = await http.get(
+      Uri.parse('$baseUrl/otherService/getAllOtherServiceData?userType=$userType'),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
 
-     if (response.statusCode == 200) {
-       final data = json.decode(response.body);
-       return AllServices.fromJson(data);
-     } else {
-       throw Exception('Failed to load services: ${response.body}');
-     }
-   }
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return AllServices.fromJson(data);
+    } else {
+      throw Exception('Failed to load services: ${response.body}');
+    }
+  }
 
 
 }
