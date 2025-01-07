@@ -50,11 +50,14 @@
   "cus_pg_req_his_card_description": "description:",
   "cus_req_his_card_st_label": "Start Time:",
   "cus_req_his_card_et_label": "End Time:",
+  "cus_req_his_card_time_label": "Time:",
+  "cus_req_his_card_date_label": "date:",
   "invalid_date_time": "Invalid Date/Time",
   "cur_pg_sub_notify_msg": "Request submitted successfully",
   "swipe_to_update_status": "swipe to update status",
   "user_menu_pg_htext": "Welcome to User Menu",
   "user_menu_card_Htext_RS": "REQUEST SERVICES",
+  "user_menu_card_Htext_OS": "OTHER SERVICES",
   "user_menu_card_Htext_FS": "FOOD SERVICES",
   "user_categories_pg_appbar_text":"Categories",
   "cus_pg_subcategories_text_name": "Categories",
@@ -73,10 +76,10 @@
   "user_page_valid_message_please_select_customer_task": "Please select a customer task",
   "user_page_valid_message_please_select_subcategory": "Please select a subcategory",
   "user_page_valid_message_please_select_category": "Please select a category",
-  "user_menu_page_order_button": "Order History"
-
-
-
-
-
+  "user_menu_page_order_button": "Order History",
+  "user_menu_page_alertdialog_select_restaurant": "Select_Restaurant",
+  "user_menu_page_alertdialog_cancel": "Cancel",
+  "login_form_field_error_empty_password": "password required",
+  "login_form_field_error_empty_email": "email id required",
+  "scheduled": "scheduled"
 }

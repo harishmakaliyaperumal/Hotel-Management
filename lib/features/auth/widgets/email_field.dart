@@ -17,14 +17,29 @@ class EmailField extends StatelessWidget {
       controller: controller,
       style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.supervised_user_circle_outlined, color: Colors.black),
-        hintText: AppLocalizations.of(context).translate('login_pg_form_filed_userEmailId'),
+        prefixIcon: const Icon(
+            Icons.supervised_user_circle_outlined, color: Colors.black),
+        hintText: AppLocalizations.of(context).translate(
+            'login_pg_form_filed_userEmailId'),
         hintStyle: const TextStyle(color: Colors.grey),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color:AppColors.backgroundColor, width: 1.5),
+          borderSide: const BorderSide(
+              color: AppColors.backgroundColor, width: 1.5),
         ),
       ),
+      // Email Validation
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return AppLocalizations.of(context).translate('login_form_field_error_empty_password');
+        }
+        final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+        if (!emailRegex.hasMatch(value)) {
+          return AppLocalizations.of(context).translate('error_invalid_email');
+        }
+        return null;
+      },
+
     );
   }
 }

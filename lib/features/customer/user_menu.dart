@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:holtelmanagement/common/helpers/app_bar.dart';
-
-// import 'package:holtelmanagement/features/customer/food/userpage_food_categories.dart';
-// import 'package:holtelmanagement/features/customer/services/user_page_requset_services.dart';
+import 'package:holtelmanagement/features/customer/customer_other_services/otherservices.dart';
 import '../../classes/language.dart';
 import '../../l10n/app_localizations.dart';
 import '../services/apiservices.dart';
@@ -19,14 +17,15 @@ class UserMenu extends StatefulWidget {
   final int floorId;
   final String rname;
 
-  const UserMenu(
-      {super.key,
-      required this.userName,
-      required this.userId,
-      required this.loginResponse,
-      required this.roomNo,
-      required this.floorId,
-      required this.rname});
+  const UserMenu({
+    super.key,
+    required this.userName,
+    required this.userId,
+    required this.loginResponse,
+    required this.roomNo,
+    required this.floorId,
+    required this.rname,
+  });
 
   @override
   State<UserMenu> createState() => _UserMenuState();
@@ -35,11 +34,11 @@ class UserMenu extends StatefulWidget {
 class _UserMenuState extends State<UserMenu> {
   final ApiService _apiService = ApiService();
 
-  // Language _selectedLanguage = Language.languageList()[0];
-  List<Map<String, dynamic>> restaurants = [];
-  bool isLoading = false;
-
-
+  // Single source of truth for state
+  List<Map<String, dynamic>> _restaurants = [];
+  bool _isLoading = false;
+  bool _isInitialized = false;
+  String? _error;
 
   @override
   void initState() {
@@ -48,64 +47,69 @@ class _UserMenuState extends State<UserMenu> {
   }
 
   Future<void> _loadRestaurants() async {
-    setState(() => isLoading = true);
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     try {
       final fetchedRestaurants = await _apiService.fetchRestaurants();
 
-      // Detailed debug print
-      print('Raw Restaurants Data: $fetchedRestaurants');
+      if (!mounted) return;
 
-      // // Check each restaurant's structure
-      // fetchedRestaurants.forEach((restaurant) {
-      //   print('Restaurant Entry:');
-      //   print('Keys: ${restaurant.keys}');
-      //   print('restaurantId: ${restaurant['restaurantId']}');
-      //   print('name: ${restaurant['name']}');
-      // });
-
-      setState(() => restaurants = fetchedRestaurants);
+      setState(() {
+        _restaurants = fetchedRestaurants;
+        _isLoading = false;
+        _isInitialized = true;
+      });
     } catch (e) {
-      print('Error fetching restaurants: $e');
-    } finally {
-      setState(() => isLoading = false);
+      if (!mounted) return;
+
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              AppLocalizations.of(context).translate('error_loading_restaurants')
+          ),
+          action: SnackBarAction(
+            label: AppLocalizations.of(context).translate('retry'),
+            onPressed: _loadRestaurants,
+          ),
+        ),
+      );
     }
   }
 
   Widget _buildBase64Image(dynamic mediaFiles) {
-    if (mediaFiles == null || mediaFiles.isEmpty) {
-      print('No media files provided');
+    if (mediaFiles == null || mediaFiles is! List || mediaFiles.isEmpty) {
       return const Icon(Icons.restaurant);
     }
 
     try {
-      // Get the first media file
       final mediaFile = mediaFiles[0];
       String? fileData = mediaFile['fileData'];
 
       if (fileData == null || fileData.isEmpty) {
-        print('No file data in media files');
         return const Icon(Icons.restaurant);
       }
 
-      // Remove data URL prefix if present
-      if (fileData.contains(',')) {
-        fileData = fileData.split(',').last;
-      }
-
-      // print('Attempting to decode image of length: ${fileData.length}');
+      fileData = fileData.contains(',') ? fileData.split(',').last : fileData;
 
       return Image.memory(
         base64Decode(fileData),
         width: 40,
         height: 40,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          print('Error loading image: $error');
-          return const Icon(Icons.broken_image);
-        },
+        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
       );
     } catch (e) {
-      print('Invalid image data: $e');
+      debugPrint('Error loading image: $e');
       return const Icon(Icons.broken_image);
     }
   }
@@ -113,84 +117,174 @@ class _UserMenuState extends State<UserMenu> {
   void _showRestaurantDialog() {
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Select Restaurant'),
-          content: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : restaurants.isEmpty
-                  ? const Text('No restaurants available')
-                  : SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: restaurants.map((restaurant) {
-                          return ListTile(
-                            leading: restaurant['image'] != null
-                                ? _buildBase64Image(restaurant['image'])
-                                : const Icon(Icons.restaurant),
-                            title: Text(restaurant['name']),
-                            onTap: () {
-                              int? restaurantId;
-
-                              if (restaurant['id'] is int) {
-                                restaurantId = restaurant['id'];
-                              } else if (restaurant['id'] is String) {
-                                restaurantId = int.tryParse(restaurant['id']);
-                              }
-
-                              if (restaurantId == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'Invalid Restaurant Selection')));
-                                return;
-                              }
-                              // print('Selected Restaurant ID: $restaurantId');
-                              // print('Restaurant Data: $restaurant');
-                              Navigator.of(context).pop();
-                              if (restaurantId != null) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => CategoriesPage(
-                                      restaurantId: restaurantId!,
-                                      // Use ! to assert non-nullability
-                                      userId: widget.userId,
-                                      floorId: widget.floorId,
-                                      roomNo: widget.roomNo,
-                                      userName: widget.userName,
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            'Invalid Restaurant Selection')));
-                              }
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
+          title: Text(AppLocalizations.of(context).translate('user_menu_page_alertdialog_select_restaurant')),
+          content: _buildDialogContent(),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context).translate('user_menu_page_alertdialog_cancel')),
+            ),
+            if (_error != null)
+              TextButton(
+                onPressed: _loadRestaurants,
+                child: Text(AppLocalizations.of(context).translate('retry')),
+              ),
+          ],
         );
       },
     );
   }
 
+  Widget _buildDialogContent() {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 100,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return SizedBox(
+        height: 100,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red),
+              const SizedBox(height: 8),
+              Text(_error!, textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_restaurants.isEmpty) {
+      return SizedBox(
+        height: 100,
+        child: Center(
+          child: Text(
+            AppLocalizations.of(context).translate('no_restaurants_available'),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: _restaurants.map((restaurant) {
+          return ListTile(
+            leading: _buildBase64Image(restaurant['image']),
+            title: Text(restaurant['name'] ?? ''),
+            onTap: () => _handleRestaurantSelection(restaurant),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _handleRestaurantSelection(Map<String, dynamic> restaurant) {
+    int? restaurantId;
+
+    if (restaurant['id'] is int) {
+      restaurantId = restaurant['id'];
+    } else if (restaurant['id'] is String) {
+      restaurantId = int.tryParse(restaurant['id']);
+    }
+
+    if (restaurantId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              AppLocalizations.of(context).translate('invalid_restaurant_selection')
+          ),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).pop();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CategoriesPage(
+          restaurantId: restaurantId,
+          userId: widget.userId,
+          floorId: widget.floorId,
+          roomNo: widget.roomNo,
+          userName: widget.userName,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServiceCard({
+    required String title,
+    required String imagePath,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      color: const Color(0x882F919B),
+      elevation: 5,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: const BorderSide(
+          color: Color(0xFF2A6E75),
+          width: 2.0,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(imagePath),
+                    fit: BoxFit.cover,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: buildAppBar(
         context: context,
-        onLanguageChange: (Language newLanguage) {
-          // Handle language change
-        },
+        onLanguageChange: (Language newLanguage) {},
         isLoginPage: false,
         extraActions: [],
         dashboardType: DashboardType.user,
-        onLogout: () {
-          logOut(context);
-        },
+        onLogout: () => logOut(context),
         apiService: _apiService,
       ),
       body: SingleChildScrollView(
@@ -202,7 +296,7 @@ class _UserMenuState extends State<UserMenu> {
               Center(
                 child: Text(
                   AppLocalizations.of(context).translate('user_menu_pg_htext'),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -210,119 +304,102 @@ class _UserMenuState extends State<UserMenu> {
               ),
               const SizedBox(height: 30),
 
-              // First Card: Food Services (Image Left, Text Right)
-              Card(
-                color: Color(0x882F919B),
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  side: BorderSide(
-                    color: Color(0xFF2A6E75), // Consistent border color
-                    width: 2.0,
-                  ),
-                ),
-                child: InkWell(
-                  onTap: _showRestaurantDialog,
-                  child: Row(
-                    children: [
-                      // Left Side Image
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
+              // Food Services Card
+              _buildServiceCard(
+                title: AppLocalizations.of(context).translate('user_menu_card_Htext_FS'),
+                imagePath: 'assets/images/food_services_image.png',
+                onTap: () async {
+                  // Show loading dialog with gray color
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (BuildContext context) {
+                      return Dialog(
+                        backgroundColor: Colors.grey[200],
                         child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/images/food_services_image.png'), // Replace with your image
-                              fit: BoxFit.cover,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                AppLocalizations.of(context).translate('loading'),
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      // Right Side Text
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            AppLocalizations.of(context)
-                                .translate('user_menu_card_Htext_FS'),
-                            style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              // color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
+                      );
+                    },
+                  );
+
+                  try {
+                    // Load restaurants if not already loaded
+                    if (!_isInitialized || _error != null) {
+                      await _loadRestaurants();
+                    }
+
+                    // Close loading dialog
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+
+                    // Show restaurant dialog if data is available
+                    if (_restaurants.isNotEmpty && _error == null && context.mounted) {
+                      _showRestaurantDialog();
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      // Close loading dialog
+                      Navigator.of(context).pop();
+
+                      // Optional: Handle errors internally or log them
+                      debugPrint("Error loading restaurants: $e");
+                    }
+                  }
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // Request Services Card
+              _buildServiceCard(
+                title: AppLocalizations.of(context).translate('user_menu_card_Htext_RS'),
+                imagePath: 'assets/images/request_services_image.png',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UserDashboard(
+                      userName: widget.userName,
+                      userId: widget.userId,
+                      roomNo: widget.roomNo,
+                      floorId: widget.floorId,
+                      rname: widget.rname,
+                      loginResponse: widget.loginResponse,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
 
-              // Second Card: Request Services (Image Right, Text Left)
-              Card(
-                color: Color(0x882F919B),
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  side: BorderSide(
-                    color: Color(0xFF2A6E75), // Consistent border color
-                    width: 2.0,
-                  ),
-                ),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => UserDashboard(
-                            userName: widget.userName,
-                            userId: widget.userId,
-                            roomNo: widget.roomNo,
-                            floorId: widget.floorId,
-                            rname: widget.rname,
-                            loginResponse: widget.loginResponse,
-                          )
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      // Right Side Image
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/images/request_services_image.png'), // Replace with your image
-                              fit: BoxFit.cover,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            AppLocalizations.of(context)
-                                .translate('user_menu_card_Htext_RS'),
-                            style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              // color: Color(0xFF2A6E75),
-                              // color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
+              // Other Services Card
+              _buildServiceCard(
+                title: AppLocalizations.of(context).translate('user_menu_card_Htext_OS'),
+                imagePath: 'assets/images/request_services_image.png',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ServiceDropdownPage(
+                      userName: widget.userName,
+                      userId: widget.userId,
+                      roomNo: widget.roomNo,
+                      floorId: widget.floorId,
+                      rname: widget.rname,
+                      loginResponse: widget.loginResponse,
+                    ),
                   ),
                 ),
               ),
@@ -335,56 +412,39 @@ class _UserMenuState extends State<UserMenu> {
                   Text(
                     AppLocalizations.of(context)
                         .translate('user_menu_card_text_order_history'),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  // ElevatedButton(
-                  //   onPressed: () {
-                  //     // Add order history navigation logic
-                  //   },
-                  //   child: Text('Order History'),
-                  // ),
-
-
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage('assets/images/oderhistory.png'), // Replace with your image
-                          fit: BoxFit.cover,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      image: const DecorationImage(
+                        image: AssetImage('assets/images/oderhistory.png'),
+                        fit: BoxFit.cover,
                       ),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ],
               ),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CustomerHistory(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2A6E75), // Button background color
-                ),
-                child:  Text(
-                  AppLocalizations.of(context).translate('user_menu_page_order_button'),
-                  // 'Order History',
-                  style: TextStyle(
-                    color: Colors.white, // Text color for contrast
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CustomerHistory(),
                   ),
                 ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2A6E75),
+                ),
+                child: Text(
+                  AppLocalizations.of(context).translate('user_menu_page_order_button'),
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
-
             ],
           ),
         ),

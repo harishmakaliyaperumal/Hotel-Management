@@ -185,12 +185,12 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   Future<bool> _onWillPop() async {
     return false; // Return false to disable back button
   }
-
-  Future<void> _updateJobStatus() async {
-    final request = _generalRequests.isNotEmpty ? _generalRequests[0] : null;
+  Map<String, int> _requestStatusIndices = {};
+  Future<void> _updateJobStatus(Map<String, dynamic> request) async {
     if (request != null) {
       String requestJobHistoryId = request['requestJobHistoryId'].toString();
-      String currentStatus = _statuses[_currentStatusIndex];
+      int currentIndex = _requestStatusIndices[requestJobHistoryId] ?? 0;
+      String currentStatus = _statuses[currentIndex];
 
       try {
         await _apiService.Statusupdate(
@@ -199,25 +199,21 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
           requestJobHistoryId,
         );
 
-        // Play system sound for status update
-        // await _playSystemSound();
-
         setState(() {
           request['jobStatus'] = currentStatus;
-          String timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(
-              DateTime.now());
+          String timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
           statusHistory.add('$timestamp: $currentStatus');
 
-          if (_currentStatusIndex < _statuses.length - 1) {
-            _currentStatusIndex++;
-            request['nextJobStatus'] = _statuses[_currentStatusIndex];
+          if (currentIndex < _statuses.length - 1) {
+            _requestStatusIndices[requestJobHistoryId] = currentIndex + 1;
+            request['nextJobStatus'] = _statuses[currentIndex + 1];
           } else {
             request['nextJobStatus'] = 'Completed';
           }
         });
 
-        String nextStatus = _currentStatusIndex < _statuses.length - 1
-            ? _statuses[_currentStatusIndex]
+        String nextStatus = currentIndex < _statuses.length - 1
+            ? _statuses[currentIndex + 1]
             : 'Completed';
 
         _showOverlayNotification(
@@ -226,8 +222,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         );
       } catch (e) {
         print('Failed to update task: ${e.toString()}');
-        _showSnackBar(
-            'Failed to update status: ${e.toString()}', isError: true);
+        _showSnackBar('Failed to update status: ${e.toString()}', isError: true);
       }
     }
   }
@@ -538,7 +533,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
               ),
             Divider(height: screenHeight * 0.02),
             _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_com_his_text_request'), request['taskName'] ?? 'N/A', screenWidth, request),
-            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_location'), request['roomId'] ?? 'N/A', screenWidth, request),
+            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_location'), request['roomName'] ?? 'N/A', screenWidth, request),
             _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_description'), description, screenWidth, request),
             if (!isCompleted) ...[
               SizedBox(height: screenHeight * 0.015),
@@ -559,12 +554,12 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                     // Special handling for KitchenInProgress
                     if (isKitchenInProgress) {
                       // Directly update to Door Checking status
-                      await _updateJobStatus();
+                      await _updateJobStatus(request);
 
                       // Immediately update to Customer Feedback
-                      await _updateJobStatus();
+                      await _updateJobStatus(request);
                     } else {
-                      await _updateJobStatus();
+                      await _updateJobStatus(request);
                     }
                   }
                 },
@@ -585,7 +580,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
 
 
   // Swipeable button that updates status
-  Widget _buildSwipeButton() {
+  Widget _buildSwipeButton(Map<String, dynamic> request) {
     return SwipeableButtonView(
       buttonText: AppLocalizations.of(context).translate('swipe_to_update_status'),
       buttonWidget: Container(
@@ -599,7 +594,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         await Future.delayed(const Duration(seconds: 1));
 
         // Update the status when swipe is completed
-        await _updateJobStatus(); // This will handle API and UI updates
+        await _updateJobStatus(request); // This will handle API and UI updates
 
         setState(() {
           isfinished = true; // Indicate that the swipe action is finished

@@ -55,6 +55,7 @@
   "user_menu_pg_htext":"Velkommen til brukermenyen",
   "user_menu_card_Htext_FS": "MATTJENESTER",
   "user_menu_card_Htext_RS": "FORESPØRSELTJENESTER",
+  "user_menu_card_Htext_OS": "ANDRE TJENESTER",
   "user_categories_pg_appbar_text": "Kategorier",
   "cus_pg_subcategories_text_name": "Kategorier",
   "cus_pg_subcategories_text_description": "Beskrivelse",
@@ -72,6 +73,11 @@
   "user_page_valid_message_please_select_customer_task": "Please select a customer task",
   "user_page_valid_message_please_select_subcategory": "Vennligst velg en underkategori",
   "user_page_valid_message_please_select_category": "Vennligst velg en kategori",
-  "user_menu_page_order_button": "Bestillingshistorikk"
+  "user_menu_page_order_button": "Bestillingshistorikk",
+  "user_menu_page_alertdialog_select_restaurant": " Velg Restaurant",
+  "user_menu_page_alertdialog_cancel": "Avbryt",
+  "login_form_field_error_empty_password": "Vennligst skriv inn passordet",
+  "login_form_field_error_empty_email": "Vennligst skriv inn e-posten",
+  "scheduled": "planlagt"
 
 }

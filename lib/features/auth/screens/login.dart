@@ -31,6 +31,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   bool _obscureText = true;
   final ApiService _apiService = ApiService();
+  final _formKey = GlobalKey<FormState>();
+
 
   final SharedPreferencesHelper _preferencesHelper = SharedPreferencesHelper();
 
@@ -95,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
     } catch (e) {
-      _showError(e.toString());
+      _showError('invalied Credancials');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -106,17 +108,21 @@ class _LoginPageState extends State<LoginPage> {
 
 
   void _showError(String message) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Error"),
-        content: Text(message),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
-        ],
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red, // Optional: Adds a red background for an error feel
+      action: SnackBarAction(
+        label: 'OK',
+        onPressed: () {
+          // Optional: Handle the "OK" action if needed
+        },
+        textColor: Colors.white, // Optional: Changes the text color
       ),
     );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
+
 
   Widget _buildHeader() {
     return Column(
@@ -214,25 +220,29 @@ class _LoginPageState extends State<LoginPage> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
               ),
               child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context).translate('loing_pg_htext_login'),
-                      textAlign: TextAlign.left,
-                      style: const TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 20),
-                    EmailField(controller: _userEmailIdController),
-                    const SizedBox(height: 20),
-                    PasswordField(
-                      controller: _passwordController,
-                      obscureText: _obscureText,
-                      toggleVisibility: () => setState(() => _obscureText = !_obscureText),
-                    ),
-                    const SizedBox(height: 30),
-                    LoginButton(isLoading: _isLoading, onPressed: _login),
-                  ],
+                child: Form(
+                  key: _formKey,
+                  child:  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      EmailField(controller: _userEmailIdController),
+                      const SizedBox(height: 20),
+                      PasswordField(
+                        controller: _passwordController,
+                        obscureText: _obscureText,
+                        toggleVisibility: () => setState(() => _obscureText = !_obscureText),
+                      ),
+                      const SizedBox(height: 30),
+                      LoginButton(
+                        isLoading: _isLoading,
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            _login();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

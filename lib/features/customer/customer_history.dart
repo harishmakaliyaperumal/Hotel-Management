@@ -37,6 +37,8 @@ class _CustomerHistoryState extends State<CustomerHistory> with TickerProviderSt
     _tabController = TabController(length: 2, vsync: this);
   }
 
+
+
   @override
   void dispose() {
     // Dispose the tab controller
@@ -90,6 +92,61 @@ class _CustomerHistoryState extends State<CustomerHistory> with TickerProviderSt
     }
   }
 
+
+
+  // Updated date formatting method for the CustomerHistory widget
+  String _formatDateTime(Map<String, dynamic> task) {
+    // For Scheduled status, use date and time fields if available
+    if (task['jobStatus'] == 'Scheduled') {
+      final date = task['date']?.toString();
+      final time = task['time']?.toString();
+
+      if (date != null || time != null) {
+        String formattedDate = 'N/A';
+        String formattedTime = 'N/A';
+
+        if (date != null && date.isNotEmpty) {
+          try {
+            final dateTime = DateTime.parse(date);
+            formattedDate = '${dateTime.day.toString().padLeft(2, '0')}-'
+                '${dateTime.month.toString().padLeft(2, '0')}-'
+                '${dateTime.year}';
+          } catch (e) {
+            formattedDate = 'N/A';
+          }
+        }
+
+        if (time != null && time.isNotEmpty) {
+          try {
+            final dateTime = DateTime.parse(time);
+            formattedTime = '${dateTime.hour.toString().padLeft(2, '0')}:'
+                '${dateTime.minute.toString().padLeft(2, '0')}';
+          } catch (e) {
+            formattedTime = 'N/A';
+          }
+        }
+
+        return '$formattedDate $formattedTime';
+      }
+    }
+
+    // For other statuses or if date/time not available, use starttime/endTime
+    return task['starttime'] != null ? _formatDateTimeFromString(task['starttime']) : 'N/A';
+  }
+
+  String _formatDateTimeFromString(String? dateTimeStr) {
+    if (dateTimeStr == null || dateTimeStr.isEmpty) return 'N/A';
+    try {
+      final dateTime = DateTime.parse(dateTimeStr);
+      return '${dateTime.day.toString().padLeft(2, '0')}-'
+          '${dateTime.month.toString().padLeft(2, '0')}-'
+          '${dateTime.year} '
+          '${dateTime.hour.toString().padLeft(2, '0')}:'
+          '${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return 'N/A';
+    }
+  }
 
 
   String _formatDate(String? dateTimeStr) {
@@ -259,7 +316,20 @@ class _CustomerHistoryState extends State<CustomerHistory> with TickerProviderSt
               ],
 
             ),
+
             const SizedBox(height: 8),
+            // Column(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     Text(
+            //       '${AppLocalizations.of(context).translate('cus_req_his_card_time_label')} ${_formatDate(task['date'])}',
+            //     ),
+            //     Text(
+            //       '${AppLocalizations.of(context).translate('cus_req_his_card_date_label')} ${_formatDate(task['time'])}',
+            //     ),
+            //   ],
+            //
+            // ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

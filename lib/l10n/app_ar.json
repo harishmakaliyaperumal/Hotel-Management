@@ -56,6 +56,7 @@
   "user_menu_pg_htext":"مرحبًا بك في قائمة المستخدم",
   "user_menu_card_Htext_FS": "خدمات الطعام",
   "user_menu_card_Htext_RS": "طلبخدمات",
+  "user_menu_card_Htext_OS": "خدمات أخرى",
   "user_categories_pg_appbar_text": "فئات",
   "cus_pg_subcategories_text_name": "فئات",
   "cus_pg_subcategories_text_description": "وصف",
@@ -73,6 +74,10 @@
   "user_page_valid_message_please_select_customer_task": "يرجى اختيار مهمة العميل",
   "user_page_valid_message_please_select_subcategory": "يرجى اختيار الفئة الفرعية",
   "user_page_valid_message_please_select_category": "يرجى اختيار الفئة",
-  "user_menu_page_order_button": "تاريخ الطلبات"
-
+  "user_menu_page_order_button": "تاريخ الطلبات",
+  "user_menu_page_alertdialog_select_restaurant": "اختيار المطعم",
+  "user_menu_page_alertdialog_cancel": "إلغاء",
+  "login_form_field_error_empty_password": "من فضلك أدخل كلمة المرور",
+  "login_form_field_error_empty_email": " من فضلك أدخل البريد الإلكتروني",
+  "scheduled": "المقرر"
 }
