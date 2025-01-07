@@ -1,23 +1,26 @@
 import 'dart:convert';
-import 'dart:ffi';
+// import 'dart:ffi';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../common/helpers/shared_preferences_helper.dart';
 import '../../models/categorymodel.dart';
 import '../../utility/token.dart';
+import '../customer/customer_other_services/otherservices.dart';
+import '../customer/customer_other_services/widgets/models/OtherServiceSlot_models.dart';
+import '../customer/customer_other_services/widgets/otherservices_models.dart';
 import '../customer/customerhistorymodels/cus_his_models.dart';
 import '../dashboard/services/services_models/ser_models.dart';
 import '../kitchenMenu/kitchen_models/data.dart';
 
 
 class ApiService {
-   final TokenProvider tokenProvider = TokenProvider();
+  final TokenProvider tokenProvider = TokenProvider();
   final String baseUrl = 'https://www.hotels.annulartech.net';
   // final SharedPreferencesHelper _prefsHelper = SharedPreferencesHelper();
 
   // final String baseUrl = 'https://www.hotels.annulartech.net';
-   final SharedPreferencesHelper _prefsHelper;
+  final SharedPreferencesHelper _prefsHelper;
   final TokenProvider _tokenProvider;
 
   ApiService({
@@ -69,15 +72,14 @@ class ApiService {
         return data;
       } else {
         return {
-          'error': 'Failed to login. Status code: ${response.statusCode}',
+          'error': 'Failed to login.',
           'details': response.body,
         };
       }
     } catch (e) {
       // Handle network or other errors
       return {
-        'error': 'An error occurred during login',
-        'details': e.toString()
+        'error': 'Failed to login. invalided credentials',
       };
     }
   }
@@ -91,7 +93,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -134,59 +136,59 @@ class ApiService {
     }
   }
 
-   Future<List<TaskCategoryModel>> fetchTaskCategories() async {
-     try {
-       final loginData = await _prefsHelper.getLoginData();
-       final jwt = loginData?['jwt'];
+  Future<List<TaskCategoryModel>> fetchTaskCategories() async {
+    try {
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
 
-       if (jwt == null) {
-         throw Exception('Authentication token missing');
-       }
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
+      }
 
-       final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
-       // Check if token needs refresh before making request
-       if (await tokenProvider.needsRefresh()) {
-         final newJwt = await tokenProvider.refreshToken();
-         if (newJwt == null) {
-           throw Exception('Token refresh failed');
-         }
-       }
+      // Check if token needs refresh before making request
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          throw Exception('Token refresh failed');
+        }
+      }
 
-       // Get fresh JWT after potential refresh
-       final currentLoginData = await _prefsHelper.getLoginData();
-       final currentJwt = currentLoginData?['jwt'];
+      // Get fresh JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
 
-       final response = await http.get(
-         Uri.parse('$baseUrl/task/getAllTaskCategoryDetails'),
-         headers: {
-           'Content-Type': 'application/json',
-           'Authorization': 'Bearer $currentJwt',
-         },
-       );
+      final response = await http.get(
+        Uri.parse('$baseUrl/task/getAllTaskCategoryDetails'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $currentJwt',
+        },
+      );
 
-       if (response.statusCode == 401) {
-         final newToken = await tokenProvider.refreshToken();
-         if (newToken == null) throw Exception('Token refresh failed');
+      if (response.statusCode == 401) {
+        final newToken = await tokenProvider.refreshToken();
+        if (newToken == null) throw Exception('Token refresh failed');
 
-         return fetchTaskCategories();
-       }
+        return fetchTaskCategories();
+      }
 
-       final decodedResponse = jsonDecode(response.body);
+      final decodedResponse = jsonDecode(response.body);
 
-       if (response.statusCode == 200) {
-         final List<dynamic> jsonList = json.decode(response.body);
-         return jsonList
-             .map((json) => TaskCategoryModel.fromJson(json))
-             .toList();
-       } else {
-         throw Exception('Failed to load task categories');
-       }
-     } catch (e) {
-       print('Error in fetchTaskCategories: $e');
-       rethrow;
-     }
-   }
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList
+            .map((json) => TaskCategoryModel.fromJson(json))
+            .toList();
+      } else {
+        throw Exception('Failed to load task categories');
+      }
+    } catch (e) {
+      print('Error in fetchTaskCategories: $e');
+      rethrow;
+    }
+  }
 
   Future<List<TaskSubcategoryModel>> fetchTaskSubcategories(int taskCategoryId) async {
     try {
@@ -197,7 +199,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -255,7 +257,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -333,7 +335,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -412,7 +414,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -490,7 +492,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -535,7 +537,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -579,7 +581,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -721,7 +723,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -766,7 +768,7 @@ class ApiService {
     catch (e) {
       print('Error in getGeneralRequestsById: $e');
       try {
-        final prefs = await SharedPreferences.getInstance();
+        // final prefs = await SharedPreferences.getInstance();
 
       } catch (cacheError) {
         print('Error retrieving cached data: $cacheError');
@@ -786,7 +788,6 @@ class ApiService {
 
       final prefs = await SharedPreferences.getInstance();
 
-      // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
         final newJwt = await tokenProvider.refreshToken();
         if (newJwt == null) {
@@ -794,11 +795,8 @@ class ApiService {
         }
       }
 
-      // Get fresh JWT after potential refresh
       final currentLoginData = await _prefsHelper.getLoginData();
       final currentJwt = currentLoginData?['jwt'];
-
-
 
       final response = await http.get(
         Uri.parse('$baseUrl/hotelapp/getByCustomerRequestById'),
@@ -811,45 +809,48 @@ class ApiService {
       if (response.statusCode == 401) {
         final newToken = await tokenProvider.refreshToken();
         if (newToken == null) throw Exception('Token refresh failed');
-
         return getCustomerRequestsById();
       }
+
       final responseBody = utf8.decode(response.bodyBytes);
       final decodedResponse = jsonDecode(responseBody);
 
       if (response.statusCode == 200 && decodedResponse['status'] == 1) {
-        final responseBody = utf8.decode(response.bodyBytes);
-        final Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
-
-        if (jsonResponse['status'] == 1 && jsonResponse.containsKey('data')) {
-          // Convert the raw data to a list of CustomerRequest objects
-          final List<CustomerRequest> requests = (jsonResponse['data'] as List)
+        if (decodedResponse['data']?['customerRequests'] != null) {
+          final List<CustomerRequest> requests =
+          (decodedResponse['data']['customerRequests'] as List)
               .map((item) => CustomerRequest.fromMap(item))
               .toList();
 
-          // Cache the response data as a list of maps
-          await prefs.setString('customerRequests', jsonEncode(
-              requests.map((request) => request.toMap()).toList()
-          ));
+          // Cache the response data
+          await prefs.setString('customerRequests',
+              jsonEncode(requests.map((request) => request.toMap()).toList())
+          );
+
           return requests;
-        } else {
-          print('Unexpected response structure: $jsonResponse');
-          return [];
         }
-      } else {
-        print('Failed to fetch data. HTTP Status: ${response.statusCode}');
-        return [];
       }
+
+      print('Failed to fetch data. Status: ${response.statusCode}, Response: $decodedResponse');
+      return [];
+
     } catch (e) {
       print('Error in getCustomerRequestsById: $e');
+
+      // Attempt to return cached data
       final prefs = await SharedPreferences.getInstance();
       final cachedRequestsString = prefs.getString('customerRequests');
 
       if (cachedRequestsString != null) {
-        final List<dynamic> cachedRequestsMaps = jsonDecode(cachedRequestsString);
-        return cachedRequestsMaps
-            .map((item) => CustomerRequest.fromMap(item))
-            .toList();
+        try {
+          final List<dynamic> cachedRequestsMaps = jsonDecode(cachedRequestsString);
+          return cachedRequestsMaps
+              .map((item) => CustomerRequest.fromMap(item))
+              .toList();
+        } catch (cacheError) {
+          print('Error reading cache: $cacheError');
+          return [];
+        }
       }
       return [];
     }
@@ -865,7 +866,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -935,7 +936,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -989,7 +990,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -1045,7 +1046,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -1112,7 +1113,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -1169,7 +1170,7 @@ class ApiService {
         throw Exception('Authentication token missing');
       }
 
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
 
       // Check if token needs refresh before making request
       if (await tokenProvider.needsRefresh()) {
@@ -1220,7 +1221,7 @@ class ApiService {
       throw Exception('Authentication token missing');
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    // final prefs = await SharedPreferences.getInstance();
 
     // Check if token needs refresh before making request
     if (await tokenProvider.needsRefresh()) {
@@ -1344,7 +1345,186 @@ class ApiService {
   }
 
 
-  
+  // Future<ServiceResponse> fetchServices(String userType) async {
+  //   try {
+  //     // Get the token
+  //     final token = await _getToken();
+  //
+  //     if (token == null) {
+  //       throw Exception('No authentication token found');
+  //     }
+  //
+  //     final response = await http.get(
+  //       Uri.parse('$baseUrl/otherService/getAllOtherServiceData?userType=$userType'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': 'Bearer $token',
+  //       },
+  //     );
+  //
+  //     print('Response status: ${response.statusCode}');
+  //     print('Response body: ${response.body}');
+  //
+  //     if (response.statusCode == 200) {
+  //       return ServiceResponse.fromJson(json.decode(response.body));
+  //     } else if (response.statusCode == 401) {
+  //       // Handle unauthorized error
+  //       final errorResponse = json.decode(response.body);
+  //       throw Exception('Authentication error: ${errorResponse['message']}');
+  //     } else {
+  //       throw Exception('Failed to load services: ${response.body}');
+  //     }
+  //   } catch (e) {
+  //     print('Error in fetchServices: $e');
+  //     rethrow;
+  //   }
+  // }
+
+  Future<ServiceResponse> fetchServices() async {
+    // Get login data from _prefsHelper
+    final loginData = await _prefsHelper.getLoginData();
+    final jwt = loginData?['jwt'];
+    if (jwt == null) {
+      throw Exception('Authentication token missing');
+    }
+
+    // final prefs = await SharedPreferences.getInstance();
+
+    // Check if token needs refresh before making request
+    if (await tokenProvider.needsRefresh()) {
+      final newJwt = await tokenProvider.refreshToken();
+      if (newJwt == null) {
+        throw Exception('Token refresh failed');
+      }
+    }
+
+    // Get fresh JWT after potential refresh
+    final currentLoginData = await _prefsHelper.getLoginData();
+    final currentJwt = currentLoginData?['jwt'];
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/otherService/getAllOtherServiceData'),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $currentJwt",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      return ServiceResponse.fromJson(data);
+    } else {
+      throw Exception('Failed to load services: ${response.body}');
+    }
+  }
+
+  Future<OtherServiceSlot> fetchServiceSlots(int otherServiceId) async {
+    // Get login data from _prefsHelper
+    final loginData = await _prefsHelper.getLoginData();
+    final jwt = loginData?['jwt'];
+    if (jwt == null) {
+      throw Exception('Authentication token missing');
+    }
+
+    // Check if token needs refresh before making request
+    if (await tokenProvider.needsRefresh()) {
+      final newJwt = await tokenProvider.refreshToken();
+      if (newJwt == null) {
+        throw Exception('Token refresh failed');
+      }
+    }
+
+    // Get fresh JWT after potential refresh
+    final currentLoginData = await _prefsHelper.getLoginData();
+    final currentJwt = currentLoginData?['jwt'];
+
+    // Make the API call
+    final response = await http.get(
+      Uri.parse('$baseUrl/otherService/getAllOtherServiceById?OtherServiceId=$otherServiceId'),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $currentJwt",
+      },
+    );
+
+    // Handle the response
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      return OtherServiceSlot.fromJson(data); // Use the class for parsing
+    } else {
+      throw Exception('Failed to load services: ${response.body}');
+    }
+  }
+
+
+  Future<void> bookotherservices({
+    required int otherServiceId,
+    required int serviceCreatedBy,
+    required String jobStatus,
+    required int scheduleId,
+    required String time,
+    required String date,
+    required int floorId,
+    required int roomDataId,
+    required String rname,
+  }) async {
+    try {
+      // Get login data and token
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) throw Exception('Authentication token missing');
+
+      // Refresh token if needed
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) throw Exception('Token refresh failed');
+      }
+
+      // Construct the base request body
+      final Map<String, dynamic> requestBody = {
+        'otherServiceId': otherServiceId,
+        'serviceCreatedBy': serviceCreatedBy,
+        'jobStatus': jobStatus,
+        'roomDataId': roomDataId,
+        'floorId': floorId,
+        'rname': rname,
+      };
+
+      // Add scheduleId only if it's not 0
+      if (scheduleId != 0) {
+        requestBody['scheduleId'] = scheduleId;
+      }
+
+      // Add date and time only if they're not empty
+      if (date.isNotEmpty) requestBody['date'] = date;
+      if (time.isNotEmpty) requestBody['time'] = time;
+
+      // Make the API call
+      final response = await http.post(
+        Uri.parse('$baseUrl/otherService/saveOtherServiceByCustomer'),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $jwt",
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        final responseBody = json.decode(response.body);
+        return responseBody;
+      } else {
+        throw Exception(
+          'Failed to submit service request: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to book other services: $e');
+    }
+  }
+
+
+
+
 
 }
 
