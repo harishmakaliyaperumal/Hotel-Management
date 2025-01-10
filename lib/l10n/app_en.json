@@ -59,7 +59,6 @@
   "user_menu_card_Htext_RS": "REQUEST SERVICES",
   "user_menu_card_Htext_OS": "OTHER SERVICES",
   "user_menu_card_Htext_FS": "FOOD SERVICES",
-  "user_menu_card_Htext_OS": "OTHER SERVICES",
   "user_categories_pg_appbar_text":"Categories",
   "cus_pg_subcategories_text_name": "Categories",
   "cus_pg_subcategories_text_description": "Description",
@@ -82,5 +81,6 @@
   "user_menu_page_alertdialog_cancel": "Cancel",
   "login_form_field_error_empty_password": "password required",
   "login_form_field_error_empty_email": "email id required",
-  "scheduled": "scheduled"
+  "scheduled": "scheduled",
+  "cus_req_his_card_scheduleSlotName_label": "ScheduleSlotName"
 }

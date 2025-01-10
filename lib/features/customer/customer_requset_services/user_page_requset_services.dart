@@ -374,6 +374,29 @@ class _UserDashboardState extends State<UserDashboard> {
   @override
   Widget build(BuildContext context) {
     final String currentLanguage = Localizations.localeOf(context).languageCode;
+
+    // Common decoration for Dropdowns and TextFormField
+    InputDecoration commonDecoration(String labelText) {
+      return InputDecoration(
+        labelText: AppLocalizations.of(context).translate(labelText),
+        labelStyle: const TextStyle(color: Colors.grey), // Consistent light gray label text
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: const BorderSide(
+            color: Colors.grey, // Light gray border for enabled state
+            width: 1.5,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: const BorderSide(
+            color: Colors.grey, // Light gray border for focused state
+            width: 1.5,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: buildAppBar(
         context: context,
@@ -391,176 +414,149 @@ class _UserDashboardState extends State<UserDashboard> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Dropdown menu for selecting task
-                      DropdownButtonFormField<int>(
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context).translate('user_page_select_task_category'),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        value: _selectedTaskCategoryId,
-                        items: _taskCategories.map((category) {
-                          return DropdownMenuItem<int>(
-                            value: category.taskCategoryId,
-                            child: Text(category.taskCategoryName),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedTaskCategoryId = value;
-                              _selectedTaskSubcategoryId = null;
-                              _selectedCustomerTaskId = null;
-                              _taskSubcategories = [];
-                              _customerTasks = [];
-                            });
-                            _fetchTaskSubcategories(value);
-                          }
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return AppLocalizations.of(context)!.translate('user_page_valid_message_please_select_category');
-                          }
-                          return null;
-                        },
-                      ),
-                
-                      const SizedBox(height: 16),
-                
-                      // Task Subcategory Dropdown
-                      DropdownButtonFormField<int>(
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context).translate('user_page_select_task_subcategory'),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        value: _selectedTaskSubcategoryId,
-                        items: _taskSubcategories.map((subcategory) {
-                          print('Dropdown Item - ID: ${subcategory.taskSubCategoryId}, '
-                              'Name: ${subcategory.taskSubCategoryName}');
-                          return DropdownMenuItem<int>(
-                            value: subcategory.taskSubCategoryId,
-                            child: Text(subcategory.taskSubCategoryName),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedTaskSubcategoryId = value;
-                              _selectedCustomerTaskId = null;
-                              _customerTasks = [];
-                            });
-                            _fetchCustomerTasks(value);
-                          }
-                        },
-                        validator: (value) {
-                          if (_selectedTaskCategoryId != null && value == null) {
-                            // return 'Please select a task subcategory';
-                            return AppLocalizations.of(context)!.translate('user_page_valid_message_please_select_subcategory');
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // Customer Task Dropdown
-                      // Customer Task Dropdown
-                      DropdownButtonFormField<int>(
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context).translate('user_page_select_task_customer_task'),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        // hint: Text('No tasks available'), // Add a hint for when list is empty
-                        value: _selectedCustomerTaskId,
-                        items: _customerTasks.isEmpty
-                            ? []
-                            : _customerTasks.map((task) {
-                          return DropdownMenuItem<int>(
-                            value: task.taskId,
-                            child: Text(task.taskName),
-                          );
-                        }).toList(),
-                        onChanged: _customerTasks.isEmpty
-                            ? null  // Disable dropdown if no tasks
-                            : (value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedTaskId = value;
-                              _selectedCustomerTaskId = value;
-                            });
-                          }
-                        },
-                        validator: (value) {
-                          if (_selectedTaskSubcategoryId != null && value == null) {
-                            return AppLocalizations.of(context)!.translate('user_page_valid_message_please_select_customer_task');
-                          }
-                          return null;
-                        },
-                      ),
-                
-                  const SizedBox(height: 20),
-                      // Description input
-                      TextFormField(
-                        controller: _messageController,
-                        maxLines: 3,
-                        style: const TextStyle(color: Colors.black),
-                        decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context)
-                              .translate('cus_pg_form_field_des'),
-                          // labelText: 'Description',
-                          labelStyle: const TextStyle(color: Colors.black),
-                          // filled: true,
-                          // fillColor: Color(0xFFC4DAD2),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(
-                                color: Color(0xffB5E198), width: 1.5),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: const BorderSide(
-                                color: Color(0xffB5E198), width: 1.5),
-                          ),
-                          alignLabelWithHint: true,
-                        ),
-                        // validator: (value) {
-                        //   if (value == null || value.isEmpty) {
-                        //     return AppLocalizations.of(context)
-                        //         .translate('cus_req_for_notfill_error_msg');
-                        //   }
-                        //   return null;
-                        // },
-                      ),
-                      const SizedBox(height: 20),
-                      // Submit button
-                      Center(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.backgroundColor,
-                            borderRadius: BorderRadius.circular(
-                                8.0), // Rounded corners for the button
-                          ),
-                          child: CustomButton(
-                              text: AppLocalizations.of(context)
-                                  .translate('cus_pg_form_field_butt'),
-                              onPressed: _submitRequest),
-                        ),
-                      ),
-                    ],
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Dropdown menu for selecting task
+                DropdownButtonFormField<int>(
+                  decoration: commonDecoration('user_page_select_task_category'),
+                  value: _selectedTaskCategoryId,
+                  items: _taskCategories.map((category) {
+                    return DropdownMenuItem<int>(
+                      value: category.taskCategoryId,
+                      child: Text(category.taskCategoryName),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedTaskCategoryId = value;
+                        _selectedTaskSubcategoryId = null;
+                        _selectedCustomerTaskId = null;
+                        _taskSubcategories = [];
+                        _customerTasks = [];
+                      });
+                      _fetchTaskSubcategories(value);
+                    }
+                  },
+                  validator: (value) {
+                    if (value == null) {
+                      return AppLocalizations.of(context)!.translate(
+                          'user_page_valid_message_please_select_category');
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Task Subcategory Dropdown
+                DropdownButtonFormField<int>(
+                  decoration: commonDecoration('user_page_select_task_subcategory'),
+                  value: _selectedTaskSubcategoryId,
+                  items: _taskSubcategories.map((subcategory) {
+                    return DropdownMenuItem<int>(
+                      value: subcategory.taskSubCategoryId,
+                      child: Text(subcategory.taskSubCategoryName),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedTaskSubcategoryId = value;
+                        _selectedCustomerTaskId = null;
+                        _customerTasks = [];
+                      });
+                      _fetchCustomerTasks(value);
+                    }
+                  },
+                  validator: (value) {
+                    if (_selectedTaskCategoryId != null && value == null) {
+                      return AppLocalizations.of(context)!.translate(
+                          'user_page_valid_message_please_select_subcategory');
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Customer Task Dropdown
+                DropdownButtonFormField<int>(
+                  decoration: commonDecoration('user_page_select_task_customer_task'),
+                  value: _selectedCustomerTaskId,
+                  items: _customerTasks.isEmpty
+                      ? []
+                      : _customerTasks.map((task) {
+                    return DropdownMenuItem<int>(
+                      value: task.taskId,
+                      child: Text(task.taskName),
+                    );
+                  }).toList(),
+                  onChanged: _customerTasks.isEmpty
+                      ? null
+                      : (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedTaskId = value;
+                        _selectedCustomerTaskId = value;
+                      });
+                    }
+                  },
+                  validator: (value) {
+                    if (_selectedTaskSubcategoryId != null && value == null) {
+                      return AppLocalizations.of(context)!.translate(
+                          'user_page_valid_message_please_select_customer_task');
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Description input
+                TextFormField(
+                  controller: _messageController,
+                  maxLines: 3,
+                  style: const TextStyle(color: Colors.black), // Consistent text color
+                  decoration: commonDecoration('cus_pg_form_field_des'),
+                  // Uncomment if validation is required
+                  // validator: (value) {
+                  //   if (value == null || value.isEmpty) {
+                  //     return AppLocalizations.of(context)
+                  //         .translate('cus_req_for_notfill_error_msg');
+                  //   }
+                  //   return null;
+                  // },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Submit button
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.backgroundColor,
+                      borderRadius: BorderRadius.circular(
+                          8.0), // Rounded corners for the button
+                    ),
+                    child: CustomButton(
+                      text: AppLocalizations.of(context)
+                          .translate('cus_pg_form_field_butt'),
+                      onPressed: _submitRequest,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
+
 }

@@ -126,5 +126,38 @@ class RequestJob {
 
 
 
+class CompleteRequestJob {
+  final String roomId;
+  final String userName;
+  final String taskName;
+  final String description;
+  final String jobStatus;
+  final String requestJobHistoryId;
+
+  CompleteRequestJob({
+    required this.roomId,
+    required this.userName,
+    required this.taskName,
+    required this.description,
+    required this.jobStatus,
+    required this.requestJobHistoryId,
+  });
+
+  factory CompleteRequestJob.fromMap(Map<String, dynamic> map) {
+    return CompleteRequestJob(
+      roomId: map['roomName']?.toString() ?? '',
+      userName: map['userName'] ?? '',
+      taskName: map['taskName'] ?? '',
+      description: map['Description'] ?? '',
+      jobStatus: map['jobStatus'] ?? '',
+      requestJobHistoryId: map['requestJobHistoryId']?.toString() ?? '',
+    );
+  }
+}
+
+
+
+
+
 
 

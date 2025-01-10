@@ -1,10 +1,8 @@
-// import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:holtelmanagement/features/auth/screens/login.dart';
-// import 'package:holtelmanagement/features/dashboard/screens/breakhistory.dart';
 import 'package:holtelmanagement/features/dashboard/widgets/customtabbar.dart';
 import 'package:holtelmanagement/features/dashboard/widgets/ser_page_rating.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
@@ -17,6 +15,7 @@ import '../../../../classes/language.dart';
 import '../../../../common/helpers/app_bar.dart';
 import '../../../../common/helpers/shared_preferences_helper.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../widgets/completedtaskcard.dart';
 import '../services_models/ser_models.dart';
 
 
@@ -54,7 +53,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   final AudioPlayer _audioPlayer = AudioPlayer();
   Language _selectedLanguage = Language.languageList()[0];
   final SharedPreferencesHelper prefsHelper = SharedPreferencesHelper();
-
   int _currentStatusIndex = 0; // Index for tracking current status
   final List<String> _statuses = [
     'Accepted',
@@ -64,6 +62,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     'Completed'
   ];
   Timer? _autoRefreshTimer;
+  Map<String, int> selectedTimes = {};
+  final List<int> timeOptions = List.generate(12, (index) => (index + 1) * 5);
 
 
   @override
@@ -79,8 +79,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
 
 
     _tabController.addListener(() {
-      if (_tabController.index == 0) { // Completed tasks tab
-        _filterCompletedTasks();
+      if (_tabController.index == 1) { // Completed tasks tab
+        // _filterCompletedTasks();
       }
     });
   }
@@ -93,9 +93,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-
-
-
   @override
   void dispose() {
     _tabController.dispose();
@@ -104,23 +101,107 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     super.dispose();
   }
 
-  void _filterCompletedTasks() {
-    if (_selectedDate == null) {
-      setState(() {
-        _filteredCompletedRequests = List.from(_completedRequests);
-      });
-      return;
-    }
+  // void _filterCompletedTasks() {
+  //   if (_selectedDate == null) {
+  //     setState(() {
+  //       _filteredCompletedRequests = List.from(_completedRequests);
+  //     });
+  //     return;
+  //   }
+  //
+  //   setState(() {
+  //     _filteredCompletedRequests = _completedRequests.where((request) {
+  //       if (request['completedAt'] == null) return false;
+  //
+  //       DateTime completedDate = DateTime.parse(request['completedAt']);
+  //       return DateUtils.isSameDay(completedDate, _selectedDate);
+  //     }).toList();
+  //   });
+  // }
 
-    setState(() {
-      _filteredCompletedRequests = _completedRequests.where((request) {
-        if (request['completedAt'] == null) return false;
+  Future<void> _showTimeSelectionDialog(Map<String, dynamic> request) async {
+    final String requestId = request['requestJobHistoryId'].toString();
 
-        DateTime completedDate = DateTime.parse(request['completedAt']);
-        return DateUtils.isSameDay(completedDate, _selectedDate);
-      }).toList();
-    });
+    await showDialog(
+      context: context,
+      barrierDismissible: false, // User must pick a time
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            AppLocalizations.of(context).translate('select_time_estimate'),
+            style: const TextStyle(
+              color: Color(0xFF2A6E75),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Container(
+            width: double.maxFinite,
+            child: GridView.builder(
+              shrinkWrap: true,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1.5,
+              ),
+              itemCount: timeOptions.length,
+              itemBuilder: (context, index) {
+                final time = timeOptions[index];
+                return ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: selectedTimes[requestId] == time
+                        ? Colors.white
+                        : Color(0xFF2A6E75), backgroundColor: selectedTimes[requestId] == time
+                        ? Color(0xFF2A6E75)
+                        : Colors.white,
+                    side: BorderSide(
+                      color: Color(0xFF2A6E75),
+                      width: 1,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      selectedTimes[requestId] = time;
+                    });
+                    // Close dialog and update the time
+                    Navigator.of(context).pop();
+                     _updateTaskTimeEstimate(request, time);
+                  },
+                  child: Text('${time}m'),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
+
+  Future<void> _updateTaskTimeEstimate(Map<String, dynamic> request, int minutes) async {
+    try {
+      // Call your API service to update the time estimate
+      await _apiService.updateTaskTimeEstimate(
+        request['requestJobHistoryId'].toString(),
+        minutes,
+      );
+
+      _showSnackBar(
+        AppLocalizations.of(context).translate('time_estimate_updated'),
+      );
+    } catch (e) {
+      _showSnackBar(
+        AppLocalizations.of(context).translate('error_updating_time_estimate'),
+        isError: true,
+      );
+    }
+  }
+
+
+
+
 
   // Add new method to show date picker
   Future<void> _showDatePicker() async {
@@ -148,10 +229,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       setState(() {
         _selectedDate = picked;
       });
-      _filterCompletedTasks();
+      // _filterCompletedTasks();
     }
   }
-
 
 
   void _startAutoRefresh() {
@@ -185,7 +265,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   Future<bool> _onWillPop() async {
     return false; // Return false to disable back button
   }
+
   Map<String, int> _requestStatusIndices = {};
+
   Future<void> _updateJobStatus(Map<String, dynamic> request) async {
     if (request != null) {
       String requestJobHistoryId = request['requestJobHistoryId'].toString();
@@ -193,22 +275,23 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       String currentStatus = _statuses[currentIndex];
 
       try {
+        // Update status on the backend
         await _apiService.Statusupdate(
           widget.userId,
           currentStatus,
           requestJobHistoryId,
         );
 
+        // Immediately fetch fresh data after status update
+        await _fetchGeneralRequests();
+
+        // Update local state
         setState(() {
-          request['jobStatus'] = currentStatus;
           String timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
           statusHistory.add('$timestamp: $currentStatus');
 
           if (currentIndex < _statuses.length - 1) {
             _requestStatusIndices[requestJobHistoryId] = currentIndex + 1;
-            request['nextJobStatus'] = _statuses[currentIndex + 1];
-          } else {
-            request['nextJobStatus'] = 'Completed';
           }
         });
 
@@ -270,56 +353,78 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-
-  void _showOverlayNotification(String message, {bool isNew = false,String? status}) {
+  void _showOverlayNotification(String message,
+      {bool isNew = false, String? status}) {
     if (!mounted) return;
+
+    // Dismiss any existing Snackbars before showing a new one
+    ScaffoldMessenger.of(context).clearSnackBars();
+
     bool isDoorChecking = status == 'Door Checking';
     String displayMessage = isDoorChecking ? 'Delivered' : message;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Icon(
-                isNew ? Icons.notifications_active : Icons.notifications,
-                color: Colors.white,
-                size: 28,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      isNew ? 'New Request!' : 'Request Update',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+    final snackBar = SnackBar(
+      content: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(
+              isNew ? Icons.notifications_active : Icons.notifications,
+              color: Colors.white,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isNew ? 'New Request!' : 'Request Update',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      displayMessage,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    displayMessage,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        backgroundColor: isNew ? Colors.blue.shade700 : Colors.green.shade600,
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+            ),
+          ],
         ),
       ),
+      backgroundColor: isNew ? Colors.blue.shade700 : Colors.green.shade600,
+      duration: const Duration(seconds: 1),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
     );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+
+    // Dismiss any existing Snackbars before showing a new one
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red : AppColors.backgroundColor,
+      duration: const Duration(seconds: 2),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
 
@@ -336,16 +441,17 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     }
   }
 
-  void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : AppColors.backgroundColor,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+  // void _showSnackBar(String message, {bool isError = false}) {
+  //   ScaffoldMessenger.of(context).removeCurrentSnackBar();
+  //   ScaffoldMessenger.of(context).removeCurrentSnackBar();
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(
+  //       content: Text(message),
+  //       backgroundColor: isError ? Colors.red : AppColors.backgroundColor,
+  //       duration: const Duration(seconds: 2),
+  //     ),
+  //   );
+  // }
 
   Future<void> _toggleJobStatus(bool newValue) async {
     if (_isLoading) return;
@@ -381,7 +487,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-
   Future<void> _fetchGeneralRequests() async {
     if (_isLoading) return;
 
@@ -390,58 +495,45 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     });
 
     try {
+      // Fetch all requests first
       final requests = await _apiService.getGeneralRequestsById();
 
-      // Filter available and completed requests
-      _availableRequests =
-          requests.where((request) => request['jobStatus'] != 'Completed')
-              .toList();
-      _completedRequests =
-          requests.where((request) => request['jobStatus'] == 'Completed')
-              .toList();
-
-      _completedRequests = requests.where((request) {
-        bool isCompleted = request['jobStatus'] == 'Completed';
-        if (isCompleted && request['completedAt'] == null) {
-          request['completedAt'] = DateTime.now()
-              .toIso8601String(); // Add timestamp for completed tasks
-        }
-        return isCompleted;
+      // Process the fetched data
+      final availableRequests = requests.where((request) {
+        final status = request['jobStatus']?.toString().toLowerCase() ?? '';
+        return status != 'completed' && status != 'cancelled';
       }).toList();
 
+      final completedRequests = requests.where((request) {
+        final status = request['jobStatus']?.toString().toLowerCase() ?? '';
+        return status == 'completed';
+      }).toList();
 
-      _filterCompletedTasks();
-
-
-      // Check for new requests
-      final newRequests = _availableRequests.where((newRequest) =>
+      // Check for new requests and play notification if needed
+      final newRequests = availableRequests.where((newRequest) =>
       !_generalRequests.any((oldRequest) =>
       oldRequest['requestJobHistoryId'] == newRequest['requestJobHistoryId']))
           .toList();
 
       if (newRequests.isNotEmpty) {
-
         for (var request in newRequests) {
           await _playNotificationSound(request['flag']);
-          // Optionally, you can uncomment the notification overlay if needed
-          // _showOverlayNotification(
-          //     '${request['userName']} - ${request['taskName']} (${request['roomName']})',
-          //     isNew: true
-          // );
         }
-
       }
 
+      // Update state
       setState(() {
-        _generalRequests = requests; // Update with all requests
+        _generalRequests = requests;
+        _availableRequests = availableRequests;
+        _completedRequests = completedRequests;
+        // _filteredCompletedRequests = _filterCompletedRequestsByDate(completedRequests);
       });
 
-      if (_jobStatus && _availableRequests.isEmpty) {
+      if (_jobStatus && availableRequests.isEmpty) {
         _showSnackBar(AppLocalizations.of(context).translate('ser_pg_notify_no_tasks'));
       }
     } catch (e) {
       print('Error fetching requests: $e');
-      // _showSnackBar('Error loading requests. Please try again.', isError: true);
       setState(() {
         _generalRequests = [];
         _availableRequests = [];
@@ -460,15 +552,16 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     bool isCompleted = request['jobStatus'] == 'Completed';
     bool isDoorChecking = request['jobStatus'] == 'Door Checking';
     bool isKitchenInProgress = request['jobStatus'] == 'KitchenInProgress';
+    bool isAccepted = request['jobStatus'] == 'Accepted';
+
+    if (isAccepted && !selectedTimes.containsKey(request['requestJobHistoryId'].toString())) {
+      Future.microtask(() => _showTimeSelectionDialog(request));
+    }
 
     String currentLanguage = Localizations.localeOf(context).languageCode;
-
-    String description;
-    if (currentLanguage == 'no') {
-      description = request['DescriptionNorweign'] ?? 'No description available';
-    } else {
-      description = request['Description'] ?? 'No description available';
-    }
+    String description = currentLanguage == 'no'
+        ? request['DescriptionNorweign'] ?? 'No description available'
+        : request['Description'] ?? 'No description available';
 
     return Card(
       margin: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
@@ -497,26 +590,48 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                     ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isCompleted ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    isDoorChecking
-                        ? 'Delivered'
-                        : isKitchenInProgress
-                        ? 'Kitchen in Progress'
-                        : AppLocalizations.of(context).translate(
-                        request['jobStatus']?.toLowerCase()?.replaceAll(' ', '_') ?? 'unknown_status'
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (selectedTimes.containsKey(request['requestJobHistoryId'].toString())) ...[
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        margin: EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${selectedTimes[request['requestJobHistoryId'].toString()]}m',
+                          style: TextStyle(
+                            color: Color(0xFF2A6E75),
+                            fontSize: screenWidth * 0.035,
+                          ),
+                        ),
+                      ),
+                    ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isCompleted ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        isDoorChecking
+                            ? 'Delivered'
+                            : isKitchenInProgress
+                            ? 'Kitchen in Progress'
+                            : AppLocalizations.of(context).translate(
+                            request['jobStatus']?.toLowerCase()?.replaceAll(' ', '_') ?? 'unknown_status'
+                        ),
+                        style: TextStyle(
+                          color: isCompleted ? Colors.green : Color(0xFF2A6E75),
+                          fontSize: screenWidth * 0.035,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
-                    style: TextStyle(
-                      color: isCompleted ? Colors.green : Color(0xFF2A6E75),
-                      fontSize: screenWidth * 0.035,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -532,9 +647,24 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                 ),
               ),
             Divider(height: screenHeight * 0.02),
-            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_com_his_text_request'), request['taskName'] ?? 'N/A', screenWidth, request),
-            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_location'), request['roomName'] ?? 'N/A', screenWidth, request),
-            _buildInfoRow(AppLocalizations.of(context).translate('ser_pg_history_card_text_description'), description, screenWidth, request),
+            _buildInfoRow(
+                AppLocalizations.of(context).translate('ser_pg_com_his_text_request'),
+                request['taskName'] ?? 'N/A',
+                screenWidth,
+                request
+            ),
+            _buildInfoRow(
+                AppLocalizations.of(context).translate('ser_pg_history_card_text_location'),
+                request['roomName'] ?? 'N/A',
+                screenWidth,
+                request
+            ),
+            _buildInfoRow(
+                AppLocalizations.of(context).translate('ser_pg_history_card_text_description'),
+                description,
+                screenWidth,
+                request
+            ),
             if (!isCompleted) ...[
               SizedBox(height: screenHeight * 0.015),
               SwipeableButtonView(
@@ -551,12 +681,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                       isfinished = true;
                     });
 
-                    // Special handling for KitchenInProgress
                     if (isKitchenInProgress) {
-                      // Directly update to Door Checking status
                       await _updateJobStatus(request);
-
-                      // Immediately update to Customer Feedback
                       await _updateJobStatus(request);
                     } else {
                       await _updateJobStatus(request);
@@ -582,7 +708,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   // Swipeable button that updates status
   Widget _buildSwipeButton(Map<String, dynamic> request) {
     return SwipeableButtonView(
-      buttonText: AppLocalizations.of(context).translate('swipe_to_update_status'),
+      buttonText: AppLocalizations.of(context).translate(
+          'swipe_to_update_status'),
       buttonWidget: Container(
         child: const Icon(
           Icons.arrow_back_ios_new_sharp,
@@ -612,8 +739,10 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-  Widget _buildInfoRow(String label, String value, double screenWidth, Map<String, dynamic> request) {
-    final bool isDescription = label == AppLocalizations.of(context).translate('ser_pg_history_card_text_description');
+  Widget _buildInfoRow(String label, String value, double screenWidth,
+      Map<String, dynamic> request) {
+    final bool isDescription = label == AppLocalizations.of(context).translate(
+        'ser_pg_history_card_text_description');
 
     if (!mounted) return const SizedBox.shrink();
 
@@ -649,17 +778,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-
   Widget _buildDescriptionWithLink(String description, double screenWidth, Map<String, dynamic> request) {
-    // Safe type check for feedback status
-    bool isFeedbackSubmitted = false;
-    try {
-      isFeedbackSubmitted = request['feedback_status'] == true ||
-          request['jobStatus'] == 'Completed';
-    } catch (e) {
-      print('Error checking feedback status: $e');
-    }
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -673,72 +792,20 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
             ),
           ),
         ),
-        isFeedbackSubmitted
-            ? Text(
-          'Feedback Submitted',
-          style: TextStyle(
-            fontSize: screenWidth * 0.035,
-            color: Colors.grey,
-            fontStyle: FontStyle.italic,
-          ),
-        )
-            : GestureDetector(
-          onTap: () {
-            // Ensure proper type conversion for requestJobHistoryId
-            final int requestJobHistoryId;
-            try {
-              requestJobHistoryId = request['requestJobHistoryId'] is String
-                  ? int.parse(request['requestJobHistoryId'])
-                  : request['requestJobHistoryId'] as int;
-            } catch (e) {
-              print('Error converting requestJobHistoryId: $e');
-              return;
-            }
-
-            final requestJob = RequestJob.fromJson({
-              'userName': request['name']?.toString() ?? 'Unknown User',
-              'Description': request['Description']?.toString() ?? 'No description',
-              'taskName': request['taskName']?.toString() ?? 'Unnamed Task',
-              // 'taskId': request['taskId']?.toString() ?? 'Unnamed TaskId',
-              'jobStatus': request['jobStatus']?.toString() ?? 'Unknown',
-              'requestJobHistoryId': requestJobHistoryId,
-            });
-
-            if (context.mounted) {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (BuildContext dialogContext) => ServicesRating(
-                  requestJobHistoryId: requestJobHistoryId,
-                  request: requestJob,
-                ),
-              ).then((_) {
-                if (mounted) {
-                  setState(() {
-                    request['feedback_status'] = true;
-                    _fetchGeneralRequests();
-                  });
-                }
-              });
-            }
-          },
-          child: Text(
-            'Feedback',
-            style: TextStyle(
-              fontSize: screenWidth * 0.035,
-              color: const Color(0xFF2A6E75),
-              decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
       ],
     );
   }
 
   @override
-  Widget build(BuildContext context)  {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery
+        .of(context)
+        .size
+        .width;
+    final screenHeight = MediaQuery
+        .of(context)
+        .size
+        .height;
 
     Widget _buildInactiveContent() {
       return SingleChildScrollView(
@@ -768,7 +835,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       );
     }
 
-    return  WillPopScope(
+    return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
@@ -836,9 +903,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-
   // Completd and filteredCompletedRequests
-  Widget _buildTaskList(List<Map<String, dynamic>> tasks, double screenWidth, double screenHeight, bool isCompleted) {
+  Widget _buildTaskList(List<Map<String, dynamic>> tasks, double screenWidth,
+      double screenHeight, bool isCompleted) {
     return Column(
       children: [
         if (isCompleted) _buildFilterHeader(screenWidth, screenHeight),
@@ -876,7 +943,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         children: [
           Text(
             _selectedDate != null
-                ? 'Completed on ${DateFormat('MMM dd, yyyy').format(_selectedDate!)}'
+                ? 'Completed on ${DateFormat('MMM dd, yyyy').format(
+                _selectedDate!)}'
                 : 'All completed tasks',
             style: TextStyle(
               fontSize: screenWidth * 0.04,
@@ -893,7 +961,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                     setState(() {
                       _selectedDate = null;
                     });
-                    _filterCompletedTasks();
+                    // _filterCompletedTasks();
                   },
                   tooltip: 'Clear date filter',
                 ),
@@ -920,28 +988,29 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (!isCompleted) TextButton.icon(
-              onPressed: () async {
-                try {
-                  await _apiService.notifyBreaks(widget.userId);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("breaknotified!")),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("failedtonotifybreaks")),
-                  );
-                }
-              },
-              icon: const Icon(Icons.notifications_active),
-              label: Text(
-                AppLocalizations.of(context).translate('ser_pg_link_notify_breaks'),
-                style: TextStyle(fontSize: screenWidth * 0.04),
+            if (!isCompleted)
+              TextButton.icon(
+                onPressed: () async {
+                  try {
+                    await _apiService.notifyBreaks(widget.userId);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Break notified!")),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Failed to notify breaks")),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.notifications_active),
+                label: Text(
+                  AppLocalizations.of(context).translate('ser_pg_link_notify_breaks'),
+                  style: TextStyle(fontSize: screenWidth * 0.04),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.black26,
+                ),
               ),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.black26,
-              ),
-            ),
             SizedBox(height: screenHeight * 0.02),
             Icon(
               isCompleted ? Icons.task_alt : Icons.inbox_outlined,
@@ -951,9 +1020,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
             SizedBox(height: screenHeight * 0.04),
             Text(
               isCompleted
-                  ? _selectedDate != null
-                  ? '${AppLocalizations.of(context).translate('ser_pg_notify_no_completed_tasks_on')} ${DateFormat('MMM dd, yyyy').format(_selectedDate!)}'
-                  :  AppLocalizations.of(context).translate('ser_pg_notify_no_completed_tasks')
+                  ? AppLocalizations.of(context).translate('ser_pg_notify_no_completed_tasks')
                   : AppLocalizations.of(context).translate('ser_pg_notify_no_available_requests'),
               style: TextStyle(
                 fontSize: screenWidth * 0.045,
@@ -966,43 +1033,88 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       );
     }
 
-    return Column(
-      children: [
-        if (!isCompleted) Padding(
-          padding: EdgeInsets.all(screenWidth * 0.04),
-          child: TextButton.icon(
-            onPressed: () async {
-              try {
-                await _apiService.notifyBreaks(widget.userId);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppLocalizations.of(context).translate('ser_pg_notify_break_notified'))),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppLocalizations.of(context).translate('ser_pg_notify_failed_to_notify_breaks'))),
-                );
-              }
-            },
-            icon: const Icon(Icons.notifications_active),
-            label: Text(
-              AppLocalizations.of(context).translate('ser_pg_link_notify_breaks'),
-              style: TextStyle(fontSize: screenWidth * 0.02),
-            ),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.black26,
-            ),
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
+    if (!isCompleted) {
+      // Available Tasks Section (Old Model)
+      return Column(
+        children: [
+          Padding(
             padding: EdgeInsets.all(screenWidth * 0.04),
-            itemCount: tasks.length,
-            itemBuilder: (context, index) => _buildRequestCard(tasks[index], screenWidth, screenHeight),
+            child: TextButton.icon(
+              onPressed: () async {
+                try {
+                  await _apiService.notifyBreaks(widget.userId);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(AppLocalizations.of(context).translate('ser_pg_notify_break_notified'))),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(AppLocalizations.of(context).translate('ser_pg_notify_failed_to_notify_breaks'))),
+                  );
+                }
+              },
+              icon: const Icon(Icons.notifications_active),
+              label: Text(
+                AppLocalizations.of(context).translate('ser_pg_link_notify_breaks'),
+                style: TextStyle(fontSize: screenWidth * 0.02),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.black26,
+              ),
+            ),
           ),
-        ),
-      ],
-    );
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.all(screenWidth * 0.04),
+              itemCount: tasks.length,
+              itemBuilder: (context, index) => _buildRequestCard(tasks[index], screenWidth, screenHeight),
+            ),
+          ),
+        ],
+      );
+    } else {
+      // Completed Tasks Section (Fetch All Data Directly from API)
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: _apiService.getCompletedRequestsByUserId(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.task_alt,
+                    size: screenWidth * 0.12,
+                    color: Colors.grey[400],
+                  ),
+                  SizedBox(height: screenHeight * 0.04),
+                  Text(
+                    AppLocalizations.of(context).translate('ser_pg_notify_no_completed_tasks'),
+                    style: TextStyle(
+                      fontSize: screenWidth * 0.045,
+                      color: Colors.black26,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          } else {
+            final completedTasks = snapshot.data!;
+            return ListView.builder(
+              padding: EdgeInsets.all(screenWidth * 0.04),
+              itemCount: completedTasks.length,
+              itemBuilder: (context, index) => CompletedTaskCard(
+                task: completedTasks[index],
+              ),
+            );
+          }
+        },
+      );
+    }
   }
-
 }
 

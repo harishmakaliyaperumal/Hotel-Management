@@ -199,20 +199,20 @@ AppBar buildAppBar({
                   },
                    ),
                   ),
-                  // PopupMenuItem(
-                  //   child: ListTile(
-                  //     leading: Icon(Icons.history),
-                  //     title: Text('Services History'),
-                  //     onTap: () {
-                  //       // var userId;
-                  //       // Navigator.of(context).push(
-                  //       //   MaterialPageRoute(
-                  //       //     builder: (context) => const SerRequestHistory(),
-                  //       //   ),
-                  //       // );
-                  //     },
-                  //   ),
-                  // ),
+                  PopupMenuItem(
+                    child: ListTile(
+                      leading: Icon(Icons.history),
+                      title: Text('Services History'),
+                      onTap: () {
+                        var userId;
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SerRequestHistory(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
 
                 ],
 

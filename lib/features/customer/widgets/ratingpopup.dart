@@ -5,9 +5,12 @@ import 'package:holtelmanagement/features/services/apiservices.dart';
 class RatingPopup extends StatefulWidget {
   final Map<String, dynamic> task;
   final  String requestDataId;
+  final String? otherServiceHistoryId;
 
 
-  const RatingPopup({Key? key, required this.task, required this.requestDataId }) : super(key: key);
+
+  const RatingPopup({Key? key, required this.task, required this.requestDataId,this.otherServiceHistoryId, }) : assert(requestDataId != null || otherServiceHistoryId != null),
+        super(key: key);
 
   @override
   _RatingPopupState createState() => _RatingPopupState();
@@ -21,76 +24,82 @@ class _RatingPopupState extends State<RatingPopup> {
   final ApiService _apiService = ApiService();
 
 
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
 
 
   void _updateSubmitButton() {
     setState(() {
-      _isSubmitEnabled = _rating > 0 && !_isSubmitting; // Only enable if not submitting
+      _isSubmitEnabled = _rating > 0 && !_isSubmitting;
     });
   }
 
-  void _submitRating() async {
-    if (_rating > 0) {
-      // Extract the required values
-      String requestDataId = widget.task['requestDataId'];  // Assuming task contains requestDataId
-      String ratingComment = _commentController.text;
-      int rating = _rating.toInt();
-
-      // Print values for debugging
-      print('Task: ${widget.task['taskName']}');
-      print('Rating: $rating');
-      // print('Rating: $_rating');
-      print('Comment: $ratingComment');
-
-      setState(() {
-        _isSubmitting = true;
-        _updateSubmitButton(); // Disable submit button
-      });
-
-      try {
-        // Call the API to submit the rating
-        await _apiService.StatusupdateRatting(
-            requestDataId, ratingComment, rating);
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Thank you for your feedback!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Close the dialog
-        Navigator.of(context).pop();
-      } catch (e) {
-        // Handle any errors in the API call
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to submit rating. Please try again later.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      finally {
-        // After submission (success or failure), reset _isSubmitting
-        if (mounted) {
-          setState(() {
-            _isSubmitting = false;
-            _updateSubmitButton(); // Re-enable submit button if needed
-          });
-        }
-      }
-      // Close the dialog after submitting
-      Navigator.of(context).pop();
-
-    } else {
-      // Show a message if the rating is invalid (e.g., 0 or empty)
+  Future<void> _submitRating() async {
+    if (_rating <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Please provide a rating.'),
           backgroundColor: Colors.orange,
         ),
       );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _updateSubmitButton();
+    });
+
+    try {
+      // Print all data before making the API call
+      print('Submitting Rating Data:');
+      print('Task Name: ${widget.task['taskName']}');
+      print('Rating: $_rating');
+      print('Comments: ${_commentController.text}');
+
+      // Make the API call
+      await _apiService.StatusupdateRatting(
+        widget.requestDataId, // Pass requestDataId
+        widget.otherServiceHistoryId, // Pass otherServiceHistoryId
+        _commentController.text,
+        _rating.toInt(),
+      );
+
+      // Print success message
+      print('Rating submitted successfully!');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Thank you for your feedback!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      // Print error message
+      print('Failed to submit rating: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit rating: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _updateSubmitButton();
+        });
+      }
     }
   }
 
@@ -154,9 +163,19 @@ class _RatingPopupState extends State<RatingPopup> {
           style: ElevatedButton.styleFrom(
             backgroundColor: _isSubmitEnabled ? Colors.blue : Colors.grey,
           ),
-          child: _isSubmitting ? CircularProgressIndicator(color: Colors.white) : Text('Submit'),
+          child: _isSubmitting
+              ? SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          )
+              : Text('Submit'),
         ),
       ],
     );
   }
+
 }

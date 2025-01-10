@@ -30,13 +30,13 @@ class CustomTabBar extends StatelessWidget {
             onTap: () => onTabChanged(0),
             count: availableRequestsCount,
           ),
-          CustomTabButton(
-            label: AppLocalizations.of(context).translate('ser_pg_tap_text_completed'),
-            icon: Icons.task_alt,
-            isSelected: tabController.index == 1,
-            onTap: () => onTabChanged(1),
-            count: completedRequestsCount,
-          ),
+          // CustomTabButton(
+          //   label: AppLocalizations.of(context).translate('ser_pg_tap_text_completed'),
+          //   icon: Icons.task_alt,
+          //   isSelected: tabController.index == 1,
+          //   onTap: () => onTabChanged(1),
+          //   count: completedRequestsCount,
+          // ),
         ],
       ),
     );

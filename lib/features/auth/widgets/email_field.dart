@@ -31,7 +31,7 @@ class EmailField extends StatelessWidget {
       // Email Validation
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return AppLocalizations.of(context).translate('login_form_field_error_empty_password');
+          return AppLocalizations.of(context).translate('login_form_field_error_empty_email');
         }
         final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
         if (!emailRegex.hasMatch(value)) {

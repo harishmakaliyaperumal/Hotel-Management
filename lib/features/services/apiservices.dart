@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 // import 'dart:ffi';
 import 'package:http/http.dart' as http;
@@ -72,8 +73,7 @@ class ApiService {
         return data;
       } else {
         return {
-          'error': 'Failed to login.',
-          'details': response.body,
+          'error': 'Failed to login. invalided credentials',
         };
       }
     } catch (e) {
@@ -624,7 +624,7 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> getGeneralRequestsById() async {
     try {
-      // Get login data from _prefsHelper
+      // Get login data and validate JWT
       final loginData = await _prefsHelper.getLoginData();
       final jwt = loginData?['jwt'];
       if (jwt == null) {
@@ -633,70 +633,97 @@ class ApiService {
 
       final prefs = await SharedPreferences.getInstance();
 
-      // Check if token needs refresh before making request
+      // Token refresh handling
       if (await tokenProvider.needsRefresh()) {
         final newJwt = await tokenProvider.refreshToken();
         if (newJwt == null) {
+          // If token refresh fails, try using cached data before throwing error
+          final cachedData = prefs.getString('generalRequests');
+          if (cachedData != null) {
+            return List<Map<String, dynamic>>.from(
+                jsonDecode(cachedData).map((item) => Map<String, dynamic>.from(item))
+            );
+          }
           throw Exception('Token refresh failed');
         }
       }
 
-      // Get fresh JWT after potential refresh
+      // Get current JWT after potential refresh
       final currentLoginData = await _prefsHelper.getLoginData();
       final currentJwt = currentLoginData?['jwt'];
 
+      // Make API request with proper error handling
       final response = await http.get(
-        Uri.parse('https://www.hotels.annulartech.net/hotelapp/getGeneralRequestById'),
+        Uri.parse('$baseUrl/hotelapp/getGeneralRequestById'),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $currentJwt", // Add JWT in Authorization header
+          "Authorization": "Bearer $currentJwt",
         },
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw TimeoutException('Request timed out'),
       );
 
-      final responseBody = utf8.decode(response.bodyBytes);
-      print('Response Body: $responseBody'); // Debug log
+      // Decode response with proper error handling
+      final String responseBody = utf8.decode(response.bodyBytes);
+      Map<String, dynamic> decodedResponse;
+      try {
+        decodedResponse = jsonDecode(responseBody);
+      } catch (e) {
+        throw Exception('Invalid JSON response: $responseBody');
+      }
 
-      final decodedResponse = jsonDecode(responseBody);
+      // Validate response format
+      if (!decodedResponse.containsKey('status')) {
+        throw Exception('Response missing status field: $responseBody');
+      }
 
+      final status = decodedResponse['status'];
+
+      // Handle different response scenarios
       if (response.statusCode == 200) {
-        final status = decodedResponse['status'];
-        print('Response Status: $status'); // Debug log
-
         if (status == 1) {
-          if (decodedResponse['data'] is List) {
-            final List jsonResponse = decodedResponse['data'];
-            final typedData = jsonResponse.map((item) {
-              return {
-                'id': item['id']?.toString() ?? '',
-                'userName': item['userName']?.toString() ?? '',
-                'taskName': item['taskName']?.toString() ?? '',
-                'Description': item['Description']?.toString() ?? '',
-                'DescriptionNorweign': item['DescriptionNorweign']?.toString() ?? '',
-                'name': item['name']?.toString() ?? '',
-                'roomName': item['roomName']?.toString() ?? '',
-                'jobStatus': item['jobStatus']?.toString() ?? '',
-                'roomId': item['roomId']?.toString() ?? '',
-                'nextJobStatus': item['nextJobStatus']?.toString() ?? '',
-                'requestJobHistoryId': item['requestJobHistoryId']?.toString() ?? '',
-                'flag': item['flag']?.toString() ?? '',
-              };
-            }).toList();
-
-            // Cache successful response
-            await prefs.setString('generalRequests', json.encode(typedData));
-            return typedData;
-          } else {
-            throw Exception('Unexpected response format or missing data field.');
+          if (decodedResponse['data'] is! List) {
+            throw Exception('Invalid data format: expected List, got ${decodedResponse['data'].runtimeType}');
           }
+
+          final List jsonResponse = decodedResponse['data'];
+          final typedData = jsonResponse.map((item) => {
+            'id': item['id']?.toString() ?? '',
+            'userName': item['userName']?.toString() ?? '',
+            'taskName': item['taskName']?.toString() ?? '',
+            'Description': item['Description']?.toString() ?? '',
+            'DescriptionNorweign': item['DescriptionNorweign']?.toString() ?? '',
+            'name': item['name']?.toString() ?? '',
+            'roomName': item['roomName']?.toString() ?? '',
+            'jobStatus': item['jobStatus']?.toString() ?? '',
+            'roomId': item['roomId']?.toString() ?? '',
+            'nextJobStatus': item['nextJobStatus']?.toString() ?? '',
+            'requestJobHistoryId': item['requestJobHistoryId']?.toString() ?? '',
+            'flag': item['flag']?.toString() ?? '',
+            'feedback_status': item['feedback_status'] ?? false,
+            'completedAt': item['completedAt']?.toString(),
+          }).toList();
+
+          // Cache successful response
+          await prefs.setString('generalRequests', jsonEncode(typedData));
+          return typedData;
+        } else if (status == 0) {
+          // Status 0 might indicate no data or other server-side condition
+          // Return empty list instead of throwing error
+          return [];
         } else {
           throw Exception('Unexpected status: $status');
         }
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized access. Please log in again.');
       } else {
-        throw Exception('Failed to fetch data: ${response.statusCode}');
+        throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in getGeneralRequestsById: $e');
-      // Try to return cached data if available
+
+      // Attempt to return cached data on any error
       try {
         final prefs = await SharedPreferences.getInstance();
         final cachedData = prefs.getString('generalRequests');
@@ -708,9 +735,129 @@ class ApiService {
       } catch (cacheError) {
         print('Error retrieving cached data: $cacheError');
       }
+
+      // If no cached data available, rethrow the original error
       throw Exception('Failed to fetch general requests: $e');
     }
   }
+
+  Future<List<Map<String, dynamic>>> getCompletedRequestsByUserId() async {
+    try {
+      // Get login data and validate JWT
+      final loginData = await _prefsHelper.getLoginData();
+      final jwt = loginData?['jwt'];
+      if (jwt == null) {
+        throw Exception('Authentication token missing');
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Token refresh handling
+      if (await tokenProvider.needsRefresh()) {
+        final newJwt = await tokenProvider.refreshToken();
+        if (newJwt == null) {
+          // If token refresh fails, try using cached data before throwing error
+          final cachedData = prefs.getString('generalRequests');
+          if (cachedData != null) {
+            return List<Map<String, dynamic>>.from(
+                jsonDecode(cachedData).map((item) => Map<String, dynamic>.from(item))
+            );
+          }
+          throw Exception('Token refresh failed');
+        }
+      }
+
+      // Get current JWT after potential refresh
+      final currentLoginData = await _prefsHelper.getLoginData();
+      final currentJwt = currentLoginData?['jwt'];
+
+      // Make API request with proper error handling
+      final response = await http.get(
+        Uri.parse('$baseUrl/hotelapp/getAllCompletedRequestByUserId'),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $currentJwt",
+        },
+      );
+
+      // Decode response with proper error handling
+      final String responseBody = utf8.decode(response.bodyBytes);
+      Map<String, dynamic> decodedResponse;
+      try {
+        decodedResponse = jsonDecode(responseBody);
+      } catch (e) {
+        throw Exception('Invalid JSON response: $responseBody');
+      }
+
+      // Validate response format
+      if (!decodedResponse.containsKey('status')) {
+        throw Exception('Response missing status field: $responseBody');
+      }
+
+      final status = decodedResponse['status'];
+
+      // Handle different response scenarios
+      if (response.statusCode == 200) {
+        if (status == 1) {
+          if (decodedResponse['data'] is! List) {
+            throw Exception('Invalid data format: expected List, got ${decodedResponse['data'].runtimeType}');
+          }
+
+          final List jsonResponse = decodedResponse['data'];
+          final typedData = jsonResponse.map((item) => {
+            'id': item['id']?.toString() ?? '',
+            'userName': item['userName']?.toString() ?? '',
+            'taskName': item['taskName']?.toString() ?? '',
+            'Description': item['Description']?.toString() ?? '',
+            'DescriptionNorweign': item['DescriptionNorweign']?.toString() ?? '',
+            'name': item['name']?.toString() ?? '',
+            'roomName': item['roomName']?.toString() ?? '',
+            'jobStatus': item['jobStatus']?.toString() ?? '',
+            'roomId': item['roomId']?.toString() ?? '',
+            'nextJobStatus': item['nextJobStatus']?.toString() ?? '',
+            'requestJobHistoryId': item['requestJobHistoryId']?.toString() ?? '',
+            'flag': item['flag']?.toString() ?? '',
+            'feedback_status': item['feedback_status'] ?? false,
+            'completedAt': item['completedAt']?.toString(),
+          }).toList();
+
+          // Cache successful response
+          await prefs.setString('generalRequests', jsonEncode(typedData));
+          return typedData;
+        } else if (status == 0) {
+          // Status 0 might indicate no data or other server-side condition
+          // Return empty list instead of throwing error
+          return [];
+        } else {
+          throw Exception('Unexpected status: $status');
+        }
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized access. Please log in again.');
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getGeneralRequestsById: $e');
+
+      // Attempt to return cached data on any error
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final cachedData = prefs.getString('generalRequests');
+        if (cachedData != null) {
+          return List<Map<String, dynamic>>.from(
+              jsonDecode(cachedData).map((item) => Map<String, dynamic>.from(item))
+          );
+        }
+      } catch (cacheError) {
+        print('Error retrieving cached data: $cacheError');
+      }
+
+      // If no cached data available, rethrow the original error
+      throw Exception('Failed to fetch general requests: $e');
+    }
+  }
+
+
 
 
   Future<void> Statusupdate(int userId, String jobStatus,
@@ -1212,16 +1359,13 @@ class ApiService {
     }
   }
 
-  Future<void> StatusupdateRatting(String requestDataId, String ratingComment,
-      int rating) async {
+  Future<void> StatusupdateRatting(String? requestDataId, String? otherServiceHistoryId, String ratingComment, int rating) async {
     // Get login data from _prefsHelper
     final loginData = await _prefsHelper.getLoginData();
     final jwt = loginData?['jwt'];
     if (jwt == null) {
       throw Exception('Authentication token missing');
     }
-
-    // final prefs = await SharedPreferences.getInstance();
 
     // Check if token needs refresh before making request
     if (await tokenProvider.needsRefresh()) {
@@ -1234,20 +1378,45 @@ class ApiService {
     // Get fresh JWT after potential refresh
     final currentLoginData = await _prefsHelper.getLoginData();
     final currentJwt = currentLoginData?['jwt'];
+
+    // Log the IDs for debugging
+    print('Request Data ID: $requestDataId');
+    print('Other Service History ID: $otherServiceHistoryId');
+
+    // Construct the API URL based on which ID is available
+    final String apiUrl;
+    if (requestDataId != null && requestDataId != "0") {
+      apiUrl = '$baseUrl/hotelapp/updateRating?rating=$rating&ratingComment=${Uri.encodeComponent(ratingComment)}&requestDataId=$requestDataId';
+    } else if (otherServiceHistoryId != null) {
+      apiUrl = '$baseUrl/hotelapp/updateRating?rating=$rating&ratingComment=${Uri.encodeComponent(ratingComment)}&otherServiceHistoryId=$otherServiceHistoryId';
+    } else {
+      throw Exception('Both requestDataId and otherServiceHistoryId are null or invalid');
+    }
+
+    // Log the API URL for debugging
+    print('API URL: $apiUrl');
+
     final response = await http.put(
-      Uri.parse(
-          '$baseUrl/hotelapp/updateRating?rating=$rating&ratingComment=$ratingComment&requestDataId=$requestDataId'),
+      Uri.parse(apiUrl),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $currentJwt",
       },
-
     );
 
+    // Log the response body for debugging
+    print('Response Body: ${response.body}');
 
-    // print('Response Body: ${response.body}');
     if (response.statusCode == 200) {
-      print("Task updated successfully");
+      final responseData = jsonDecode(response.body);
+      if (responseData['status'] == 1) {
+        print("Task updated successfully");
+      } else {
+        // Handle API-specific error messages
+        final errorMessage = responseData['message'] ?? 'Failed to update task';
+        print("Failed to update task: $errorMessage");
+        throw Exception(errorMessage);
+      }
     } else {
       print("Failed to update task: ${response.body}");
       throw Exception('Failed to update task');
@@ -1519,6 +1688,25 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Failed to book other services: $e');
+    }
+  }
+
+
+  Future<void> updateTaskTimeEstimate(String requestId, int minutes) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/update-time-estimate'),
+        body: {
+          'requestId': requestId,
+          'timeEstimate': minutes.toString(),
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update time estimate');
+      }
+    } catch (e) {
+      throw Exception('Error updating time estimate: $e');
     }
   }
 

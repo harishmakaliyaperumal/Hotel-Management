@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 class CustomerRequest {
   final String taskName;
   final String jobStatus;
@@ -6,7 +8,9 @@ class CustomerRequest {
   final String? date;  // Added date field
   final String? time;
   final String description;
-  final int requestDataId;
+  final String? laterServiceName;
+  final String requestDataId;
+  final String otherServiceHistoryId;
   final String rname;
   final int floorId;
   final String floorName;
@@ -31,9 +35,11 @@ class CustomerRequest {
     this.time,
     required this.description,
     required this.requestDataId,
+    required this.otherServiceHistoryId,
     required this.rname,
     required this.floorId,
     required this.floorName,
+    required this.laterServiceName,
     required this.requestDataIsActive,
     required this.descriptionArabian,
     required this.descriptionNorweign,
@@ -57,6 +63,8 @@ class CustomerRequest {
       'time': time,
       'description': description,
       'requestDataId': requestDataId,
+      'otherServiceHistoryId':otherServiceHistoryId,
+      'laterServiceName':laterServiceName,
       'rname': rname,
       'floorId': floorId,
       'floorName': floorName,
@@ -75,6 +83,7 @@ class CustomerRequest {
   }
 
   factory CustomerRequest.fromMap(Map<String, dynamic> map) {
+    debugPrint('map: $map');
     return CustomerRequest(
       taskName: map['taskName']?.toString() ?? '',
       jobStatus: map['jobStatus']?.toString() ?? '',
@@ -83,20 +92,22 @@ class CustomerRequest {
       date: map['date']?.toString(),
       time: map['time']?.toString(),
       description: map['description']?.toString() ?? '',
-      requestDataId: map['requestDataId'] is String
-          ? int.tryParse(map['requestDataId']) ?? 0
-          : map['requestDataId'] ?? 0,
+      requestDataId: (map['requestDataId'] ?? 0).toString() ,
+      otherServiceHistoryId: (map['otherServiceHistoryId'] ?? 0).toString() ,
       rname: map['rname']?.toString() ?? '',
       floorId: map['floorId'] is String
           ? int.tryParse(map['floorId']) ?? 0
           : map['floorId'] ?? 0,
       floorName: map['floorName']?.toString() ?? '',
+      laterServiceName: map['laterServiceName']?.toString() ?? '',
       requestDataIsActive: map['requestDataIsActive'] ?? false,
       descriptionArabian: map['descriptionArabian']?.toString() ?? '',
       descriptionNorweign: map['descriptionNorweign']?.toString() ?? '',
       taskArabian: map['taskArabian']?.toString() ?? '',
       taskNorweign: map['taskNorweign']?.toString() ?? '',
-      flagData: map['flagData'],
+      flagData: map['flagData'] is String
+          ? int.tryParse(map['flagData']) ?? 0
+          : map['flagData'] ?? 0,
       taskId: map['taskId'] is String
           ? int.tryParse(map['taskId']) ?? 0
           : map['taskId'] ?? 0,

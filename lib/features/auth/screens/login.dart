@@ -97,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
     } catch (e) {
-      _showError('invalied Credancials');
+      _showError('invalid Credentials');
     } finally {
       setState(() => _isLoading = false);
     }
