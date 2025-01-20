@@ -101,23 +101,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     super.dispose();
   }
 
-  // void _filterCompletedTasks() {
-  //   if (_selectedDate == null) {
-  //     setState(() {
-  //       _filteredCompletedRequests = List.from(_completedRequests);
-  //     });
-  //     return;
-  //   }
-  //
-  //   setState(() {
-  //     _filteredCompletedRequests = _completedRequests.where((request) {
-  //       if (request['completedAt'] == null) return false;
-  //
-  //       DateTime completedDate = DateTime.parse(request['completedAt']);
-  //       return DateUtils.isSameDay(completedDate, _selectedDate);
-  //     }).toList();
-  //   });
-  // }
+
 
   Future<void> _showTimeSelectionDialog(Map<String, dynamic> request) async {
     final String requestId = request['requestJobHistoryId'].toString();
@@ -151,7 +135,8 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                   style: ElevatedButton.styleFrom(
                     foregroundColor: selectedTimes[requestId] == time
                         ? Colors.white
-                        : Color(0xFF2A6E75), backgroundColor: selectedTimes[requestId] == time
+                        : Color(0xFF2A6E75),
+                    backgroundColor: selectedTimes[requestId] == time
                         ? Color(0xFF2A6E75)
                         : Colors.white,
                     side: BorderSide(
@@ -166,9 +151,12 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                     setState(() {
                       selectedTimes[requestId] = time;
                     });
-                    // Close dialog and update the time
+
                     Navigator.of(context).pop();
-                     _updateTaskTimeEstimate(request, time);
+
+                    // Pass the selected time to the update function
+                    request['estimationTime'] = time.toString();
+                    _updateJobStatus(request);
                   },
                   child: Text('${time}m'),
                 );
@@ -179,29 +167,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       },
     );
   }
-
-  Future<void> _updateTaskTimeEstimate(Map<String, dynamic> request, int minutes) async {
-    try {
-      // Call your API service to update the time estimate
-      await _apiService.updateTaskTimeEstimate(
-        request['requestJobHistoryId'].toString(),
-        minutes,
-      );
-
-      _showSnackBar(
-        AppLocalizations.of(context).translate('time_estimate_updated'),
-      );
-    } catch (e) {
-      _showSnackBar(
-        AppLocalizations.of(context).translate('error_updating_time_estimate'),
-        isError: true,
-      );
-    }
-  }
-
-
-
-
 
   // Add new method to show date picker
   Future<void> _showDatePicker() async {
@@ -273,6 +238,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       String requestJobHistoryId = request['requestJobHistoryId'].toString();
       int currentIndex = _requestStatusIndices[requestJobHistoryId] ?? 0;
       String currentStatus = _statuses[currentIndex];
+      String estimationTime = request['estimationTime'].toString();
 
       try {
         // Update status on the backend
@@ -280,6 +246,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
           widget.userId,
           currentStatus,
           requestJobHistoryId,
+            estimationTime
         );
 
         // Immediately fetch fresh data after status update
@@ -441,17 +408,6 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     }
   }
 
-  // void _showSnackBar(String message, {bool isError = false}) {
-  //   ScaffoldMessenger.of(context).removeCurrentSnackBar();
-  //   ScaffoldMessenger.of(context).removeCurrentSnackBar();
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: Text(message),
-  //       backgroundColor: isError ? Colors.red : AppColors.backgroundColor,
-  //       duration: const Duration(seconds: 2),
-  //     ),
-  //   );
-  // }
 
   Future<void> _toggleJobStatus(bool newValue) async {
     if (_isLoading) return;
@@ -705,38 +661,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   }
 
 
-  // Swipeable button that updates status
-  Widget _buildSwipeButton(Map<String, dynamic> request) {
-    return SwipeableButtonView(
-      buttonText: AppLocalizations.of(context).translate(
-          'swipe_to_update_status'),
-      buttonWidget: Container(
-        child: const Icon(
-          Icons.arrow_back_ios_new_sharp,
-          color: Colors.greenAccent,
-        ),
-      ),
-      onWaitingProcess: () async {
-        // Simulate delay (API call time)
-        await Future.delayed(const Duration(seconds: 1));
 
-        // Update the status when swipe is completed
-        await _updateJobStatus(request); // This will handle API and UI updates
-
-        setState(() {
-          isfinished = true; // Indicate that the swipe action is finished
-        });
-      },
-      activeColor: const Color(0xff2A6E75),
-      isFinished: isfinished,
-      onFinish: () {
-        // Reset the finished state to allow for the next swipe
-        setState(() {
-          isfinished = false;
-        });
-      },
-    );
-  }
 
 
   Widget _buildInfoRow(String label, String value, double screenWidth,
@@ -1117,4 +1042,3 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     }
   }
 }
-

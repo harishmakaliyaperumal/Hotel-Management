@@ -52,13 +52,15 @@ class ServicesProvider extends ChangeNotifier {
   }
 
   // Update Request Status
-  Future<void> updateRequestStatus(String requestJobHistoryId, String status) async {
+  Future<void> updateRequestStatus(String requestJobHistoryId, String status,String? estimationTime) async {
     try {
       _setLoading(true);
       await _apiService.Statusupdate(
+
         int.parse(requestJobHistoryId),
         status,
         requestJobHistoryId,
+          estimationTime
       );
       await fetchRequests();
       _errorMessage = null;

@@ -56,7 +56,6 @@
   "user_menu_card_Htext_FS": "MATTJENESTER",
   "user_menu_card_Htext_OS": "ANDRE TJENESTER",
   "user_menu_card_Htext_RS": "FORESPØRSELTJENESTER",
-  "user_menu_card_Htext_OS": "ANDRE TJENESTER",
   "user_categories_pg_appbar_text": "Kategorier",
   "cus_pg_subcategories_text_name": "Kategorier",
   "cus_pg_subcategories_text_description": "Beskrivelse",
@@ -79,6 +78,21 @@
   "user_menu_page_alertdialog_cancel": "Avbryt",
   "login_form_field_error_empty_password": "Vennligst skriv inn passordet",
   "login_form_field_error_empty_email": "Vennligst skriv inn e-posten",
-  "scheduled": "planlagt"
+  "scheduled": "planlagt",
+  "select_time_estimate": "Estimeringstid",
+  "ser_pg_history_card_text_estimationTime": "Estimeringstid",
+  "user_history_pg_card_text_estime": "Estimeringstid",
+  "user_pg_feedback": "Tilbakemelding",
+  "user_pg_os_popup_msg_futuretime": "Vennligst velg en fremtidig tid",
+  "user_pg_os_validation_msg_date": "Vennligst velg en dato",
+  "user_pg_os_validation_msg_time": "Vennligst velg et tidspunkt",
+  "user_pg_os_validation_msg_success": "Tjenesteforespørsel sendt inn vellykket!",
+  "user_pg_os_validation_msg_failed": "Klarte ikke å sende inn tjenester",
+  "user_pg_os_text_select_service": " Velg tjeneste",
+  "user_pg_os_text_choose_a_service": "Velg en tjeneste",
+  "user_pg_os_text_choose_time_slot": "Velg tidsluke",
+  "user_pg_os_text_select_available_time_slot": "Velg tilgjengelig tidsluke",
+  "user_pg_os_text_selected date_time": " Valgt dato og tid",
+  "user_pg_os_text_book_now": "Bestill nå"
 
 }

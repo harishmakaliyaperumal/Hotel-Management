@@ -32,7 +32,19 @@ class _CustomerHistoryState extends State<CustomerHistory>
 
     // Initialize tab controller
     _tabController = TabController(length: 2, vsync: this);
+
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final newLanguage = Localizations.localeOf(context).languageCode;
+      if (_currentLanguage != newLanguage) {
+        setState(() {
+          _currentLanguage = newLanguage;
+        });
+      }
+    });
   }
+
+
 
   @override
   void dispose() {
@@ -170,6 +182,27 @@ class _CustomerHistoryState extends State<CustomerHistory>
     task['taskName']?.toLowerCase().contains('order food') ?? false);
   }
 
+
+
+  String _getLocalizedTaskName(Map<String, dynamic> task) {
+    switch (_currentLanguage) {
+      case 'no':
+        return task['taskNorweign'] ??
+            task['taskName'] ??
+            'No task name available';
+      case 'ar':
+        return task['taskArabian'] ??
+            task['taskName'] ??
+            'No task name available';
+      case 'fr':
+        return task['taskFrench'] ??
+            task['taskName'] ??
+            'No task name available';
+      default:
+        return task['taskName'] ?? 'No task name available';
+    }
+  }
+
   // New method to get localized task name
 
   String _getLocalizedDescription(Map<String, dynamic> task) {
@@ -180,6 +213,10 @@ class _CustomerHistoryState extends State<CustomerHistory>
             'No description available';
       case 'ar':
         return task['descriptionArabian'] ??
+            task['description'] ??
+            'No description available';
+      case 'fr':
+        return task['descriptionFrench'] ??
             task['description'] ??
             'No description available';
       default:
@@ -230,7 +267,7 @@ class _CustomerHistoryState extends State<CustomerHistory>
 
   Widget _buildHistoryCard(Map<String, dynamic> task) {
     String headingText = task['taskName'] != null && task['taskName'].toString().isNotEmpty
-        ? task['taskName']
+        ? _getLocalizedTaskName(task)  // Use localized task name instead
         : (task['laterServiceName'] ?? 'N/A');
 
     // Determine if time rows should be shown
@@ -320,9 +357,39 @@ class _CustomerHistoryState extends State<CustomerHistory>
                         Icons.event_available,
                       ),
                       const SizedBox(height: 8),
+                      _buildTimeRow(
+                        context,
+                        'Estimation Time',
+                        task['estimationTime'] ?? 'N/A',
+                        Icons.timer,
+                      ),
                     ],
                   ),
                 ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Text(
+                  AppLocalizations.of(context)
+                      .translate('user_history_pg_card_text_estime'),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  Text(
+                    task['estimationTime'] ?? 'N/A',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2A6E75),
+                    ),
+                  ),
+                ],
+              ),
+
               const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,7 +432,8 @@ class _CustomerHistoryState extends State<CustomerHistory>
                               size: 16, color: const Color(0xFF2A6E75)),
                           const SizedBox(width: 4),
                           Text(
-                            'Feedback',
+                            AppLocalizations.of(context)
+                                .translate('user_pg_feedback'),
                             style: TextStyle(
                               color: const Color(0xFF2A6E75),
                               fontWeight: FontWeight.w600,

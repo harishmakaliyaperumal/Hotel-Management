@@ -80,5 +80,20 @@
   "user_menu_page_alertdialog_cancel": "إلغاء",
   "login_form_field_error_empty_password": "من فضلك أدخل كلمة المرور",
   "login_form_field_error_empty_email": " من فضلك أدخل البريد الإلكتروني",
-  "scheduled": "المقرر"
+  "scheduled": "المقرر",
+  "select_time_estimate": "وقت التقدير",
+  "ser_pg_history_card_text_estimationTime": "وقت التقدير",
+  "user_history_pg_card_text_estime": "وقت التقدير",
+  "user_pg_feedback": "ملاحظات",
+  "user_pg_os_popup_msg_futuretime": "الرجاء اختيار وقت مستقبلي",
+  "user_pg_os_validation_msg_date": " الرجاء اختيار تاريخ",
+  "user_pg_os_validation_msg_time": " الرجاء اختيار وقت",
+  "user_pg_os_validation_msg_success": "تم تقديم طلب الخدمة بنجاح!",
+  "user_pg_os_validation_msg_failed": "فشل في تقديم الخدمات",
+  "user_pg_os_text_select_service": "اختر الخدمة",
+  "user_pg_os_text_choose_a_service": "اختر خدمة",
+  "user_pg_os_text_choose_time_slot": "اختر فترة زمنية",
+  "user_pg_os_text_select_available_time_slot": " اختر فترة زمنية متاحة",
+  "user_pg_os_text_selected_date_time": "التاريخ والوقت المختار",
+  "user_pg_os_text_book_now": "احجز الآن"
 }

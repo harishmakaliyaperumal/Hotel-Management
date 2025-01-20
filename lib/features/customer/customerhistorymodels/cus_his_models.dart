@@ -9,6 +9,7 @@ class CustomerRequest {
   final String? time;
   final String description;
   final String? laterServiceName;
+  final String? estimationTime;
   final String requestDataId;
   final String otherServiceHistoryId;
   final String rname;
@@ -40,6 +41,7 @@ class CustomerRequest {
     required this.floorId,
     required this.floorName,
     required this.laterServiceName,
+    required this.estimationTime,
     required this.requestDataIsActive,
     required this.descriptionArabian,
     required this.descriptionNorweign,
@@ -65,6 +67,7 @@ class CustomerRequest {
       'requestDataId': requestDataId,
       'otherServiceHistoryId':otherServiceHistoryId,
       'laterServiceName':laterServiceName,
+      'estimationTime':estimationTime,
       'rname': rname,
       'floorId': floorId,
       'floorName': floorName,
@@ -92,6 +95,7 @@ class CustomerRequest {
       date: map['date']?.toString(),
       time: map['time']?.toString(),
       description: map['description']?.toString() ?? '',
+      estimationTime: map['estimationTime']?.toString() ?? '',
       requestDataId: (map['requestDataId'] ?? 0).toString() ,
       otherServiceHistoryId: (map['otherServiceHistoryId'] ?? 0).toString() ,
       rname: map['rname']?.toString() ?? '',

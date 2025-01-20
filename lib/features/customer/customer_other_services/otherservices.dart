@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:holtelmanagement/features/customer/customer_other_services/widgets/models/OtherServiceSlot_models.dart';
 import 'package:holtelmanagement/features/customer/customer_other_services/widgets/otherservices_models.dart';
 
+import '../../../classes/language.dart';
+import '../../../common/helpers/app_bar.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../services/apiservices.dart';
 import 'package:intl/intl.dart';
 
@@ -162,8 +165,10 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
 
         if (selectedMinutes < currentMinutes) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please select a future time'),
+             SnackBar(
+              // 'Please select a future time'
+              content: Text(AppLocalizations.of(context)
+                  .translate('user_pg_os_popup_msg_futuretime'),),
               backgroundColor: Colors.red,
             ),
           );
@@ -224,8 +229,10 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
       // Using manual date/time picker
       if (_selectedDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a date'),
+           SnackBar(
+            // 'Please select a date'
+            content: Text(AppLocalizations.of(context)
+                .translate('user_pg_os_validation_msg_date'),),
             backgroundColor: Colors.red,
           ),
         );
@@ -234,8 +241,9 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
 
       if (_selectedTime == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a time'),
+           SnackBar(
+            content: Text(AppLocalizations.of(context)
+                .translate('user_pg_os_validation_msg_time'),),
             backgroundColor: Colors.red,
           ),
         );
@@ -263,8 +271,10 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Service request submitted successfully!'),
+         SnackBar(
+          // 'Service request submitted successfully!'
+          content: Text(AppLocalizations.of(context)
+              .translate('user_pg_os_validation_msg_success'),),
           backgroundColor: Colors.green,
         ),
       );
@@ -272,7 +282,9 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to submit service request: $e'),
+          // Failed to submit service request: $e
+          content: Text(AppLocalizations.of(context)
+              .translate('user_pg_os_validation_msg_failed'),),
           backgroundColor: Colors.red,
         ),
       );
@@ -302,14 +314,14 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Book a Service',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold)),
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.background,
+      appBar: buildAppBar(
+        context: context,
+        onLanguageChange: (Language newLanguage) {},
+        isLoginPage: false,
+        extraActions: [],
+        dashboardType: DashboardType.user,
+        onLogout: () => logOut(context),
+        apiService: _apiService,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -321,7 +333,8 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Select Service',
+                  AppLocalizations.of(context)
+                      .translate('user_pg_os_text_select_service'),
                   style:
                   Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
@@ -346,7 +359,9 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
                       child: DropdownButton<Service>(
                         isExpanded: true,
                         value: _selectedService,
-                        hint: Text('Choose a service'),
+                        // Choose a service
+                        hint: Text(AppLocalizations.of(context)
+                            .translate('user_pg_os_text_choose_a_service'),),
                         onChanged: (Service? newValue) {
                           setState(() {
                             _selectedService = newValue;
@@ -358,7 +373,9 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
                         items: [
                           DropdownMenuItem<Service>(
                             value: null,
-                            child: Text('Choose a service'),
+                            // 'Choose a service'
+                            child: Text(AppLocalizations.of(context)
+                                .translate('user_pg_os_text_choose_a_service'),),
                           ),
                           ..._services.map<DropdownMenuItem<Service>>(
                                   (Service service) {
@@ -401,8 +418,10 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
                   ),
                 SizedBox(height: 24),
                 if (_selectedService != null) ...[
+                  // 'Choose Time Slot',
                   Text(
-                    'Choose Time Slot',
+                    AppLocalizations.of(context)
+                        .translate('user_pg_os_text_choose_time_slot'),
                     style:
                     Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
@@ -428,7 +447,9 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
                           child: DropdownButton<int>(
                             isExpanded: true,
                             value: _selectedSchedule,
-                            hint: Text('Select available time slot'),
+                            // 'Select available time slot'
+                            hint: Text(AppLocalizations.of(context)
+                                .translate('user_pg_os_text_select_available_time_slot'),),
                             onChanged: (int? newSchedule) {
                               setState(() {
                                 _selectedSchedule =
@@ -511,8 +532,10 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // 'Selected Date & Time',
                             Text(
-                              'Selected Date & Time',
+                              AppLocalizations.of(context)
+                                  .translate('user_pg_os_text_selected_date_time'),
                               style: Theme.of(context)
                                   .textTheme
                                   .titleSmall
@@ -584,7 +607,9 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text('Book Now'),
+                      // 'Book Now'
+                      child: Text(AppLocalizations.of(context)
+                          .translate('user_pg_os_text_book_now'),),
                     ),
                   ),
                 ],

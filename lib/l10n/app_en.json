@@ -16,6 +16,7 @@
   "ser_pg_notify_no_tasks": "No tasks available at the moment",
   "ser_pg_history_text_completed": "completed",
   "ser_pg_history_text_name": "Customer Name",
+  "ser_pg_history_card_text_estimationTime": "estimationTime",
   "ser_pg_history_job_status_pending": "Pending",
   "accepted": "Accepted",
   "in_progress": "In Progress",
@@ -82,5 +83,19 @@
   "login_form_field_error_empty_password": "password required",
   "login_form_field_error_empty_email": "email id required",
   "scheduled": "scheduled",
-  "cus_req_his_card_scheduleSlotName_label": "ScheduleSlotName"
+  "cus_req_his_card_scheduleSlotName_label": "ScheduleSlotName",
+  "select_time_estimate": "estimationTime",
+  "user_history_pg_card_text_estime": "estimationTime",
+  "user_pg_feedback": "Feedback",
+  "user_pg_os_popup_msg_futuretime": "please select a future time",
+  "user_pg_os_validation_msg_date": "please select a date",
+  "user_pg_os_validation_msg_time": "please select a time",
+  "user_pg_os_validation_msg_success": "Service request submitted successfully!",
+  "user_pg_os_validation_msg_failed": "Failed to submit services",
+  "user_pg_os_text_select_service": "Select Service",
+  "user_pg_os_text_choose_a_service": "Choose a Service",
+  "user_pg_os_text_choose_time_slot": "Choose Time Slot",
+  "user_pg_os_text_select_available_time_slot": "Select available time slot",
+  "user_pg_os_text_selected_date_time": "Selected Date & Time",
+  "user_pg_os_text_book_now": "Book Now"
 }
