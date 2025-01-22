@@ -106,6 +106,7 @@ class MyApp extends StatelessWidget {
                     floorId: int.tryParse(data['floorId']?.toString() ?? '0') ?? 0,
                     roomNo: int.tryParse(data['roomNo']?.toString() ?? '0') ?? 0,
                     rname: data['username'],
+                    hotelId: data['hotelId'],
                     loginResponse: data,
                   ),
                 );
@@ -117,6 +118,7 @@ class MyApp extends StatelessWidget {
                     userName: data['username'],
                     roomNo: data['roomNo']?.toString() ?? '0',
                     floorId: data['floorId']?.toString() ?? '0',
+                    hotelId: data['hotelId'],
                   ),
                 );
               case '/restaurant':

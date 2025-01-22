@@ -93,6 +93,7 @@
   "user_pg_os_text_choose_time_slot": "Velg tidsluke",
   "user_pg_os_text_select_available_time_slot": "Velg tilgjengelig tidsluke",
   "user_pg_os_text_selected date_time": " Valgt dato og tid",
-  "user_pg_os_text_book_now": "Bestill nå"
+  "user_pg_os_text_book_now": "Bestill nå",
+  "customer_request_tab": "Kundeforespørsel"
 
 }

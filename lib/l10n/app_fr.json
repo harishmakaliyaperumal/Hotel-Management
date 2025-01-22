@@ -85,7 +85,7 @@
   "scheduled": "planifié",
   "cus_req_his_card_scheduleSlotName_label": "Nom du créneau horaire",
   "select_time_estimate": "Temps d'estimation",
-  "user_history_pg_card_text_estime": "Temps d'estimation",
+  "user_history_pg_card_text_estime": "Temps Estimé:",
   "user_pg_feedback": "Retour d'information",
   "user_pg_os_popup_msg_futuretime": "Veuillez sélectionner une heure future",
   "user_pg_os_validation_msg_date": " Veuillez sélectionner une date",
