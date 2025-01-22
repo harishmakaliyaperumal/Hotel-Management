@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:holtelmanagement/features/dashboard/services/services_page_screens/servicedashboard.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../classes/language.dart';
+import '../../../../common/helpers/app_bar.dart';
 import '../../../services/apiservices.dart';
 import '../services_models/ser_models.dart';
 
 class SerRequestHistory extends StatefulWidget {
-  const SerRequestHistory({super.key});
+  final int userId;
+  final String userName;
+  final String? roomNo;
+  final String? floorId;
+  final int hotelId;
+  const SerRequestHistory({required this.userId,
+  required this.userName,
+  this.roomNo,
+  this.floorId,
+  required this.hotelId,super.key});
 
   @override
   _SerRequestHistoryState createState() => _SerRequestHistoryState();
@@ -43,8 +55,32 @@ class _SerRequestHistoryState extends State<SerRequestHistory> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Completed Requests'),
+      appBar: buildAppBar(
+        context: context,
+        onLanguageChange: (Language newLanguage) {
+          // Handle language change
+        },
+        isLoginPage: false,
+        extraActions: [], dashboardType: DashboardType.other,
+        onLogout: () {
+          logOut(context);
+        },  apiService: _apiService,onLogoTap: () {
+        // Navigate to UserMenu with the required parameters
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ServicesDashboard(
+              userName: widget.userName,
+              userId: widget.userId,
+              roomNo: widget.roomNo,
+              hotelId: widget.hotelId,
+            ),
+          ),
+              (Route<dynamic> route) => false,
+        );
+      },
+
+
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

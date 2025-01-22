@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:holtelmanagement/features/dashboard/services/services_page_screens/servicedashboard.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
 import 'package:intl/intl.dart';
 
@@ -11,9 +12,18 @@ import '../../../../l10n/app_localizations.dart';
 
 class BreakHistory extends StatefulWidget {
   final int userId;
+  final String userName;
+  final String? roomNo;
+  final String? floorId;
+  final int hotelId;
 
 
-  const BreakHistory({super.key, required this.userId});
+
+  const BreakHistory({super.key, required this.userId,
+    required this.userName,
+    this.roomNo,
+    this.floorId,
+    required this.hotelId,});
 
   @override
   _BreakHistoryState createState() => _BreakHistoryState();
@@ -98,7 +108,22 @@ class _BreakHistoryState extends State<BreakHistory> {
         extraActions: [], dashboardType: DashboardType.other,
         onLogout: () {
           logOut(context);
-        },  apiService: _apiService,
+        },  apiService: _apiService,onLogoTap: () {
+        // Navigate to UserMenu with the required parameters
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ServicesDashboard(
+              userName: widget.userName,
+              userId: widget.userId,
+              roomNo: widget.roomNo,
+              hotelId: widget.hotelId,
+            ),
+          ),
+              (Route<dynamic> route) => false,
+        );
+      },
+
 
       ),
       body: RefreshIndicator(

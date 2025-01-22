@@ -309,6 +309,7 @@ class _KitchenDashboardState extends State<KitchenDashboard> {
         dashboardType: DashboardType.other,
         onLogout: () => logOut(context),
         apiService: _apiService,
+
       ),
       body: Column(
         children: [

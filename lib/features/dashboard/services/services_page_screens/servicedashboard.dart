@@ -24,6 +24,7 @@ class ServicesDashboard extends StatefulWidget {
   final String userName;
   final String? roomNo;
   final String? floorId;
+  final int hotelId;
 
 
   const ServicesDashboard({super.key,
@@ -31,6 +32,8 @@ class ServicesDashboard extends StatefulWidget {
     required this.userName,
     this.roomNo,
     this.floorId,
+    required this.hotelId,
+
   });
 
   @override
@@ -50,6 +53,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
   List<Map<String, dynamic>> _completedRequests = [];
   List<Map<String, dynamic>> _filteredCompletedRequests = [];
   DateTime? _lastNotificationTime;
+  final Set<String> _ratedRequests = {};
   final AudioPlayer _audioPlayer = AudioPlayer();
   Language _selectedLanguage = Language.languageList()[0];
   final SharedPreferencesHelper prefsHelper = SharedPreferencesHelper();
@@ -92,6 +96,46 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     });
   }
 
+  void _showRatingDialog(Map<String, dynamic> request) {
+    String requestId = request['requestJobHistoryId'].toString();
+
+    // Check if this request has already been rated
+    if (_ratedRequests.contains(requestId)) {
+      return;
+    }
+
+    int requestJobHistoryId = int.tryParse(requestId) ?? 0;
+
+    if (requestJobHistoryId == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid request ID.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissing by tapping outside
+      builder: (BuildContext context) {
+        return ServicesRating(
+          requestJobHistoryId: requestJobHistoryId,
+          request: RequestJob.fromJson(request),
+          onRatingSubmitted: () {
+            // Add request to rated set
+            setState(() {
+              _ratedRequests.add(requestId);
+            });
+            // Close the dialog
+            Navigator.of(context).pop();
+          },
+        );
+      },
+    );
+  }
+
 
   @override
   void dispose() {
@@ -108,63 +152,111 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
 
     await showDialog(
       context: context,
-      barrierDismissible: false, // User must pick a time
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            AppLocalizations.of(context).translate('select_time_estimate'),
-            style: const TextStyle(
-              color: Color(0xFF2A6E75),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Container(
-            width: double.maxFinite,
-            child: GridView.builder(
-              shrinkWrap: true,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 1.5,
+      barrierDismissible: true,
+      useRootNavigator: true,
+      builder: (BuildContext dialogContext) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setDialogState) {
+          return AlertDialog(
+            title: Text(
+              AppLocalizations.of(context).translate('select_time_estimate'),
+              style: const TextStyle(
+                color: Color(0xFF2A6E75),
+                fontWeight: FontWeight.bold,
               ),
-              itemCount: timeOptions.length,
-              itemBuilder: (context, index) {
-                final time = timeOptions[index];
-                return ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: selectedTimes[requestId] == time
-                        ? Colors.white
-                        : Color(0xFF2A6E75),
-                    backgroundColor: selectedTimes[requestId] == time
-                        ? Color(0xFF2A6E75)
-                        : Colors.white,
-                    side: BorderSide(
-                      color: Color(0xFF2A6E75),
-                      width: 1,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      selectedTimes[requestId] = time;
-                    });
-
-                    Navigator.of(context).pop();
-
-                    // Pass the selected time to the update function
-                    request['estimationTime'] = time.toString();
-                    _updateJobStatus(request);
-                  },
-                  child: Text('${time}m'),
-                );
-              },
             ),
-          ),
-        );
-      },
+            content: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.8,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: timeOptions.map((time) {
+                        bool isSelected = selectedTimes[requestId] == time;
+                        return InkWell(
+                          onTap: () async {
+                            // Update local state
+                            setDialogState(() {
+                              selectedTimes[requestId] = time;
+                              request['estimationTime'] = time.toString();
+                            });
+
+                            // Update parent state
+                            if (mounted) {
+                              setState(() {});
+                            }
+
+                            // Close dialog
+                            Navigator.of(dialogContext).pop();
+
+                            // Immediately update the status with new estimation time
+                            try {
+                              await _apiService.Statusupdate(
+                                  widget.userId,
+                                  request['jobStatus'] ?? 'Accepted',
+                                  requestId,
+                                  time.toString()
+                              );
+
+                              // Refresh the requests to show updated data
+                              await _fetchGeneralRequests();
+
+                              _showOverlayNotification(
+                                  'Estimation time updated: ${time}m',
+                                  isNew: false
+                              );
+                            } catch (e) {
+                              print('Failed to update estimation time: ${e.toString()}');
+                              _showSnackBar(
+                                  'Failed to update estimation time: ${e.toString()}',
+                                  isError: true
+                              );
+                            }
+                          },
+                          child: Container(
+                            width: 60,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: isSelected ? Color(0xFF2A6E75) : Colors.white,
+                              border: Border.all(
+                                color: Color(0xFF2A6E75),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${time}m',
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : Color(0xFF2A6E75),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                },
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Color(0xFF2A6E75)),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -238,7 +330,9 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
       String requestJobHistoryId = request['requestJobHistoryId'].toString();
       int currentIndex = _requestStatusIndices[requestJobHistoryId] ?? 0;
       String currentStatus = _statuses[currentIndex];
-      String estimationTime = request['estimationTime'].toString();
+      String estimationTime = selectedTimes[requestJobHistoryId]?.toString() ??
+          request['estimationTime']?.toString() ??
+          '0'; // Default to '0' if not set
 
       try {
         // Update status on the backend
@@ -246,7 +340,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
           widget.userId,
           currentStatus,
           requestJobHistoryId,
-            estimationTime
+          estimationTime, // Pass the estimation time to the API
         );
 
         // Immediately fetch fresh data after status update
@@ -509,9 +603,21 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
     bool isDoorChecking = request['jobStatus'] == 'Door Checking';
     bool isKitchenInProgress = request['jobStatus'] == 'KitchenInProgress';
     bool isAccepted = request['jobStatus'] == 'Accepted';
+    bool isCustomerFeedback = request['jobStatus'] == 'Customer Feedback'; // New condition
 
-    if (isAccepted && !selectedTimes.containsKey(request['requestJobHistoryId'].toString())) {
-      Future.microtask(() => _showTimeSelectionDialog(request));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isAccepted &&
+          !selectedTimes.containsKey(request['requestJobHistoryId'].toString()) &&
+          mounted) {
+        _showTimeSelectionDialog(request);
+      }
+    });
+
+    // Show rating dialog if status is Customer Feedback
+    if (isCustomerFeedback) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showRatingDialog(request);
+      });
     }
 
     String currentLanguage = Localizations.localeOf(context).languageCode;
@@ -779,6 +885,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
                   logOut(context);
                 },
                 apiService: _apiService,
+
               ),
               CustomTabBar(
                 tabController: _tabController,
@@ -917,7 +1024,7 @@ class _ServicesDashboardState extends State<ServicesDashboard> with SingleTicker
               TextButton.icon(
                 onPressed: () async {
                   try {
-                    await _apiService.notifyBreaks(widget.userId);
+                    await _apiService.notifyBreaks(widget.hotelId);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Break notified!")),
                     );

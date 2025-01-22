@@ -64,6 +64,8 @@ AppBar buildAppBar({
   required DashboardType dashboardType,
   required VoidCallback onLogout,
   required ApiService apiService,
+  VoidCallback? onLogoTap,
+
 
 
 }) {
@@ -135,9 +137,15 @@ AppBar buildAppBar({
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         if (!isLoginPage)
-          Image.asset(
-            'assets/images/logo.png',
-            height: 40,
+          GestureDetector( // Wrap the Image with GestureDetector
+            onTap: onLogoTap, // Add the onTap handler
+            child: MouseRegion( // Add MouseRegion for better UX on web
+              cursor: SystemMouseCursors.click,
+              child: Image.asset(
+                'assets/images/logo.png',
+                height: 40,
+              ),
+            ),
           ),
 
         if (!isLoginPage)
@@ -182,7 +190,9 @@ AppBar buildAppBar({
                         // var userId;
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => const BreakHistory(userId: 0),
+                            builder: (context) =>  BreakHistory(userId: 0, // Pass the userId
+                              userName: '', // Pass the userName
+                              hotelId: 0,),
                           ),
                         );
                       },
@@ -207,7 +217,9 @@ AppBar buildAppBar({
                         var userId;
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => const SerRequestHistory(),
+                            builder: (context) =>  SerRequestHistory(userId: 0, // Pass the userId
+                              userName: '', // Pass the userName
+                              hotelId: 0,),
                           ),
                         );
                       },
@@ -224,11 +236,43 @@ AppBar buildAppBar({
                     title: const Text('Logout'),
                     onTap: () async {
                       Navigator.pop(context); // Close the popup menu first
-                      await clearUserData(); // Ensure data is cleared
-                      onLogout(); // Call onLogout callback
+                      final shouldLogout = await showDialog<bool>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Logout Confirmation'),
+                            content: const Text('Are you sure you want to logout?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(false), // Stay logged in
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red, // Set text color to red
+                                ),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(true), // Confirm logout
+                                style: TextButton.styleFrom(
+                                 backgroundColor: Color(0xff013457),
+                                  foregroundColor:Colors.white,
+                                  // Set text color to red
+                                ),
+                                child: const Text('Ok'),
+
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
+                      if (shouldLogout == true) {
+                        await clearUserData(); // Ensure data is cleared
+                        onLogout(); // Call onLogout callback
+                      }
                     },
                   ),
                 ),
+
 
               ];
 

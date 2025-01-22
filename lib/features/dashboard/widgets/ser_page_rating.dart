@@ -1,16 +1,16 @@
-// import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-
 import '../../services/apiservices.dart';
 import '../services/services_models/ser_models.dart';
 
+
 class ServicesRating extends StatefulWidget {
   final RequestJob request;
-  final dynamic requestJobHistoryId;
+  final int requestJobHistoryId;
+  final VoidCallback onRatingSubmitted;
 
-  const ServicesRating({Key? key, required this.requestJobHistoryId, required this.request})
+
+  const ServicesRating({Key? key, required this.requestJobHistoryId, required this.request,required this.onRatingSubmitted,})
       : super(key: key);
 
   @override
@@ -25,39 +25,28 @@ class _ServicesRatingState extends State<ServicesRating> {
   bool _isSubmitting = false;
   final ApiService _apiService = ApiService();
 
-  // Function to update submit button state
   void _updateSubmitButton() {
     setState(() {
       _isSubmitEnabled = _rating > 0 || _commentController.text.isNotEmpty;
     });
   }
 
-
-  // Function to submit the rating
   void _submitRating() async {
     if (_rating > 0) {
-      String requestJobHistoryId = widget.requestJobHistoryId.toString();
+      int requestJobHistoryId = widget.requestJobHistoryId; // Pass as int
       String ratingComment = _commentController.text;
-
 
       setState(() {
         _isSubmitting = true;
-        _updateSubmitButton(); // Disable submit button
+        _updateSubmitButton();
       });
 
-      // print('Submitting rating with details:');
-      // print('Request Job History ID: $requestJobHistoryId');
-      // print('Rating: $_rating');
-      // print('Comment: $ratingComment');
-      // print('Attempting to submit rating with requestJobHistoryId: $requestJobHistoryId');
-      // // In the widget where you're creating the ServicesRating
-      // print('Request Job History ID: ${widget.requestJobHistoryId}');
-      // print('Request Job Details: ${widget.request.toString()}');
       try {
         await _apiService.submitCustomerFeedback(
-            requestJobHistoryId,
-            ratingComment,
-            _rating
+          requestJobHistoryId, // Pass as int
+          ratingComment,
+          _rating,
+
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -67,30 +56,23 @@ class _ServicesRatingState extends State<ServicesRating> {
           ),
         );
 
-        // Close the dialog
-        Navigator.of(context).pop();
-        print('rating');
-
-
+        widget.onRatingSubmitted();
       } catch (e) {
-        print('Feedback submission error: $e'); // Log the specific error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to submit rating: $e'), // Show more detailed error
+            content: Text('Failed to submit rating: $e'),
             backgroundColor: Colors.red,
           ),
         );
       } finally {
-        // After submission (success or failure), reset _isSubmitting
         if (mounted) {
           setState(() {
             _isSubmitting = false;
-            _updateSubmitButton(); // Re-enable submit button if needed
+            _updateSubmitButton();
           });
         }
       }
     } else {
-      // Show a message if the rating is invalid (e.g., 0 or empty)
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please provide a rating.'),
@@ -99,9 +81,6 @@ class _ServicesRatingState extends State<ServicesRating> {
       );
     }
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +122,7 @@ class _ServicesRatingState extends State<ServicesRating> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            onChanged: (_) => _updateSubmitButton(), // Update submit button on text change
+            onChanged: (_) => _updateSubmitButton(),
           ),
         ],
       ),

@@ -74,6 +74,7 @@ class _LoginPageState extends State<LoginPage> {
       final userType = response['userType'];
       final userName = response['username'];
       final userId = response['id'];
+      final hotelId = response['hotelId'];
       // Convert to string explicitly
       final roomNo = int.tryParse(response['roomNo']?.toString() ?? '0') ?? 0;
       final floorId = int.tryParse(response['floorId']?.toString() ?? '0') ?? 0;
@@ -84,11 +85,11 @@ class _LoginPageState extends State<LoginPage> {
       if (userType == 'CUSTOMER') {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) => UserMenu(
-            userName: userName, userId: userId, floorId: floorId, roomNo: roomNo, rname:userName,loginResponse: response)));
+            userName: userName, userId: userId, floorId: floorId, roomNo: roomNo, rname:userName,loginResponse: response,hotelId:hotelId)));
       } else if (userType == 'SERVICE') {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) => ServicesDashboard(
-            userId: userId, userName: userName, roomNo: roomNo.toString(), floorId: floorId.toString())));
+            userId: userId, userName: userName, roomNo: roomNo.toString(),hotelId:hotelId, floorId: floorId.toString())));
       } else if(userType == "RESTAURANT"){
         Navigator.pushReplacement(context, MaterialPageRoute( builder:(_)=>KitchenDashboard()));
       }
@@ -175,6 +176,7 @@ class _LoginPageState extends State<LoginPage> {
         onLogout: () {
           logOut(context);
         },apiService: _apiService,
+
       ),
       body: Stack(
         children: [

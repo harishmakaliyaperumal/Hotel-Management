@@ -9,6 +9,7 @@ import '../../../classes/language.dart';
 import '../../../common/helpers/app_bar.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/categorymodel.dart';
+import '../user_menu.dart';
 
 class UserDashboard extends StatefulWidget {
   final String userName;
@@ -17,6 +18,7 @@ class UserDashboard extends StatefulWidget {
   final int roomNo;
   final int floorId;
   final String rname;
+  final int hotelId;
 
   const UserDashboard(
       {super.key,
@@ -25,6 +27,7 @@ class UserDashboard extends StatefulWidget {
       required this.loginResponse,
       required this.roomNo,
       required this.floorId,
+      required this.hotelId,
       required this.rname});
 
   @override
@@ -63,16 +66,16 @@ class _UserDashboardState extends State<UserDashboard> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _currentLanguage = Localizations.localeOf(context).languageCode;
-    _fetchTaskCategories();
+    _fetchTaskCategories(widget.hotelId);
   }
   // Fetch Task Categories
-  Future<void> _fetchTaskCategories() async {
+  Future<void> _fetchTaskCategories(int hotelId) async {
     try {
       setState(() {
         _isLoading = true; // Add a loading state
         // _error = null; // Clear any previous errors
       });
-      final categories = await _apiService.fetchTaskCategories();
+      final categories = await _apiService.fetchTaskCategories(hotelId);
       setState(() {
         _taskCategories = categories;
         _isLoading = false;
@@ -324,20 +327,33 @@ class _UserDashboardState extends State<UserDashboard> {
           taskSubCategoryId: _selectedTaskSubcategoryId!,
           roomDataId: widget.roomNo,
           rname: widget.userName,
+          hotelId: widget.hotelId,
           requestType: 'Customer Request',
           description: description,
           requestDataCreatedBy: widget.userId,
           descriptionNorwegian: descriptionNorwegian,
-
         );
 
-        // Success handling...
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context).translate('cur_pg_sub_notify_msg'),
-            ),
-          ),
+        // Success handling with AlertDialog
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Request Submitted'),
+              content: Text(
+                AppLocalizations.of(context)
+                    .translate('cur_pg_sub_notify_msg'),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
         );
 
         _messageController.clear();
@@ -347,16 +363,28 @@ class _UserDashboardState extends State<UserDashboard> {
 
         Navigator.of(context).pop();
       } catch (e) {
-        // Error handling...
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to submit request: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+        // Error handling with AlertDialog
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Error'),
+              content: Text('Failed to submit request: ${e.toString()}'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
         );
       }
     }
   }
+
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -410,6 +438,24 @@ class _UserDashboardState extends State<UserDashboard> {
           logOut(context);
         },
         apiService: _apiService,
+        onLogoTap: () {
+          // Navigate to UserMenu with the required parameters
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => UserMenu(
+                userName: widget.userName,
+                userId: widget.userId,
+                floorId: widget.floorId,
+                roomNo: widget.roomNo,
+                rname: widget.userName,
+                loginResponse: {},
+                hotelId: widget.hotelId,
+              ),
+            ),
+                (Route<dynamic> route) => false,
+          );
+        },
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -541,8 +587,7 @@ class _UserDashboardState extends State<UserDashboard> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.backgroundColor,
-                      borderRadius: BorderRadius.circular(
-                          8.0), // Rounded corners for the button
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
                     child: CustomButton(
                       text: AppLocalizations.of(context)

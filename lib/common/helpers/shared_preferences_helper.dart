@@ -10,6 +10,7 @@ class SharedPreferencesHelper {
   static const String KEY_ROOM_NO = 'roomNo';
   static const String KEY_FLOOR_ID = 'floorId';
   static const String KEY_EXPIRY = 'expiry';
+  static const String KEY_HOTEL_ID = 'hotelId';
 
   // Save login data
   Future<void> saveLoginData(Map<String, dynamic> loginData) async {
@@ -22,6 +23,7 @@ class SharedPreferencesHelper {
       await prefs.setString(KEY_TOKEN, loginData['token'] ?? '');
       await prefs.setString(KEY_USER_TYPE, loginData['userType'] ?? '');
       await prefs.setInt(KEY_STATUS, _safeIntConvert(loginData['status']));
+      await prefs.setInt(KEY_HOTEL_ID, _safeIntConvert(loginData['hotelId']));
 
       if (loginData['roomNo'] != null) {
         await prefs.setInt(KEY_ROOM_NO, _safeIntConvert(loginData['roomNo']));
@@ -50,6 +52,7 @@ class SharedPreferencesHelper {
       'status': prefs.getInt(KEY_STATUS),
       'roomNo': prefs.getInt(KEY_ROOM_NO),
       'floorId': prefs.getInt(KEY_FLOOR_ID),
+      'hotelId': prefs.getInt(KEY_HOTEL_ID),
     };
   }
 

@@ -100,14 +100,14 @@
 
 class RequestJob {
   final String userName;
-  final String Description;
+  final String description;
   final String taskName;
   final String jobStatus;
   final int requestJobHistoryId;
 
   RequestJob({
     required this.userName,
-    required this.Description,
+    required this.description,
     required this.taskName,
     required this.jobStatus,
     required this.requestJobHistoryId,
@@ -115,11 +115,11 @@ class RequestJob {
 
   factory RequestJob.fromJson(Map<String, dynamic> json) {
     return RequestJob(
-      userName: json['userName'] ?? 'Unknown User',
-      Description: json['Description'] ?? 'No description',
-      taskName: json['taskName'] ?? 'Unnamed Task',
-      jobStatus: json['jobStatus'] ?? 'Unknown',
-      requestJobHistoryId: json['requestJobHistoryId'] ?? 0, // Corrected field name
+      userName: json['userName'] as String? ?? 'Unknown User',
+      description: json['Description'] as String? ?? 'No description',
+      taskName: json['taskName'] as String? ?? 'Unnamed Task',
+      jobStatus: json['jobStatus'] as String? ?? 'Unknown',
+      requestJobHistoryId: int.tryParse(json['requestJobHistoryId'].toString()) ?? 0,
     );
   }
 }

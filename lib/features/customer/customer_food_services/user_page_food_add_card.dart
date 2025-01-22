@@ -3,7 +3,10 @@ import 'dart:core';
 
 import 'package:flutter/material.dart';
 
+import '../../../classes/language.dart';
+import '../../../common/helpers/app_bar.dart';
 import '../../services/apiservices.dart';
+import '../user_menu.dart';
 
 class Additeampage extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
@@ -15,6 +18,7 @@ class Additeampage extends StatefulWidget {
   final int? restaurantCategoryId;
   final int? restaurantSubCategoryId;
   final int? restaurantMenuId;
+  final int hotelId;
   final Function(List<Map<String, dynamic>>)? onCartUpdated;
 
   const Additeampage({
@@ -29,6 +33,7 @@ class Additeampage extends StatefulWidget {
     this.restaurantSubCategoryId,
     this.restaurantMenuId,
     this.onCartUpdated,
+    required this.hotelId,
   }) : super(key: key);
 
   @override
@@ -74,42 +79,96 @@ class _AdditeampageState extends State<Additeampage> {
   // Submit food request
   Future<void> _submitRequest() async {
     if (widget.cartItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your cart is empty')),
+      // Show an AlertDialog instead of SnackBar
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Error'),
+          content: Text('Your cart is empty'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text('OK'),
+            ),
+          ],
+        ),
       );
       return;
     }
 
     setState(() {
-      _isLoading = true;
+      _isLoading = true; // Show loading indicator
     });
 
     try {
       final response = await _apiService.saveGeneralFoodRequest(
         floorId: widget.floorId,
-        taskId: 23,
+        taskId: 237,
         roomDataId: widget.roomNo,
         rname: widget.userName,
         requestType: "Customer Request",
         description: _generateDescription(),
         requestDataCreatedBy: widget.userId,
+        hotelId: widget.hotelId,
         restaurantId: widget.restaurantId ?? 0,
         restaurantCategoryId: widget.restaurantCategoryId ?? 0,
         restaurantSubCategoryId: widget.restaurantSubCategoryId ?? 0,
         restaurantMenu: widget.restaurantMenuId ?? 0,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request submitted successfully!')),
+      // Show success AlertDialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Success'),
+          content: Text('Request submitted successfully!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+                // Navigate to UserMenu after closing the dialog
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserMenu(
+                      userName: widget.userName,
+                      userId: widget.userId,
+                      loginResponse: {}, // Pass the required loginResponse
+                      roomNo: widget.roomNo,
+                      floorId: widget.floorId,
+                      hotelId: widget.hotelId,
+                      rname: widget.userName,
+                    ),
+                  ),
+                );
+              },
+              child: Text('OK'),
+            ),
+          ],
+        ),
       );
-      Navigator.of(context).pop();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+      // Show error AlertDialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Error'),
+          content: Text('Error: $e'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text('OK'),
+            ),
+          ],
+        ),
       );
     } finally {
       setState(() {
-        _isLoading = false;
+        _isLoading = false; // Hide loading indicator
       });
     }
   }
@@ -117,9 +176,38 @@ class _AdditeampageState extends State<Additeampage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cart'),
-        centerTitle: true,
+      appBar: buildAppBar(
+        context: context,
+        onLanguageChange: (Language newLanguage) {
+          // Handle language change
+        },
+        isLoginPage: false,
+        extraActions: [],
+        dashboardType: DashboardType.user,
+        onLogout: () {
+
+          logOut(context);
+
+        },apiService: _apiService,
+        onLogoTap: () {
+          // Navigate to UserMenu with the required parameters
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => UserMenu(
+                userName: widget.userName,
+                userId: widget.userId,
+                floorId: widget.floorId,
+                roomNo: widget.roomNo,
+                rname: widget.userName,
+                loginResponse: {},
+                hotelId: widget.hotelId,
+              ),
+            ),
+                (Route<dynamic> route) => false,
+          );
+        },
+        // backgroundColor: Colors.lightPink, // Light pink color as per preference
       ),
       body: Column(
         children: [
@@ -173,14 +261,15 @@ class _AdditeampageState extends State<Additeampage> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submitRequest,
               style: ElevatedButton.styleFrom(
+               backgroundColor: const Color(0xFF2A6E75),
                 padding:
                 const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
               ),
               child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Text(
-                'Food Request',
-                style: TextStyle(fontSize: 16.0),
+                'Request Food',
+                style: TextStyle(fontSize: 16.0,color: Colors.white),
               ),
             ),
           ),

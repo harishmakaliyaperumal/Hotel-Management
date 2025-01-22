@@ -8,6 +8,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../services/apiservices.dart';
 import 'package:intl/intl.dart';
 
+import '../user_menu.dart';
+
 class ServiceDropdownPage extends StatefulWidget {
   final String userName;
   final int userId;
@@ -15,7 +17,7 @@ class ServiceDropdownPage extends StatefulWidget {
   final int roomNo;
   final int floorId;
   final String rname;
-
+  final int hotelId;
   const ServiceDropdownPage(
       {super.key,
         required this.userName,
@@ -23,6 +25,7 @@ class ServiceDropdownPage extends StatefulWidget {
         required this.loginResponse,
         required this.roomNo,
         required this.floorId,
+        required this.hotelId,
         required this.rname});
 
   @override
@@ -60,7 +63,7 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
 
     try {
       // Call the API to fetch services
-      ServiceResponse serviceResponse = await _apiService.fetchServices();
+      ServiceResponse serviceResponse = await _apiService.fetchServices(widget.hotelId);
 
       setState(() {
         _services = serviceResponse.data;
@@ -69,9 +72,9 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
         _selectedSchedule = null;
       });
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to fetch services: $e';
-      });
+      // setState(() {
+      //   _errorMessage = 'No services found';
+      // });
     } finally {
       setState(() {
         _isLoading = false;
@@ -219,6 +222,7 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
       'floorId': widget.floorId,
       'roomDataId': widget.roomNo,
       'rname': widget.rname,
+      'hotelId': widget.hotelId,
     };
 
     // Add schedule-specific or date/time-specific fields based on the use case
@@ -228,24 +232,45 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
     } else if (_availableSchedules.isEmpty) {
       // Using manual date/time picker
       if (_selectedDate == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(
-            // 'Please select a date'
-            content: Text(AppLocalizations.of(context)
-                .translate('user_pg_os_validation_msg_date'),),
-            backgroundColor: Colors.red,
-          ),
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Validation Error'),
+              content: Text(AppLocalizations.of(context)
+                  .translate('user_pg_os_validation_msg_date')),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
         );
         return;
       }
 
       if (_selectedTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(
-            content: Text(AppLocalizations.of(context)
-                .translate('user_pg_os_validation_msg_time'),),
-            backgroundColor: Colors.red,
-          ),
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Validation Error'),
+              content: Text(AppLocalizations.of(context)
+                  .translate('user_pg_os_validation_msg_time')),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
         );
         return;
       }
@@ -261,35 +286,56 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
         otherServiceId: requestData['otherServiceId'] ?? 0,
         serviceCreatedBy: requestData['serviceCreatedBy'],
         jobStatus: requestData['jobStatus'],
-        scheduleId: requestData['scheduleId'] ?? 0,
-        // Only passed when scheduleId exists
+        scheduleId: requestData['scheduleId'] ?? 0, // Only passed when scheduleId exists
         time: requestData['time'] ?? "",
         date: requestData['date'] ?? "",
         floorId: requestData['floorId'],
         roomDataId: requestData['roomDataId'],
         rname: requestData['rname'],
+        hotelId: requestData['hotelId'],
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-         SnackBar(
-          // 'Service request submitted successfully!'
-          content: Text(AppLocalizations.of(context)
-              .translate('user_pg_os_validation_msg_success'),),
-          backgroundColor: Colors.green,
-        ),
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Success'),
+            content: Text(AppLocalizations.of(context)
+                .translate('user_pg_os_validation_msg_success')),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.of(context).pop(); // Navigate back
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
       );
-      Navigator.of(context).pop();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          // Failed to submit service request: $e
-          content: Text(AppLocalizations.of(context)
-              .translate('user_pg_os_validation_msg_failed'),),
-          backgroundColor: Colors.red,
-        ),
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: Text(AppLocalizations.of(context)
+                .translate('user_pg_os_validation_msg_failed')),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
       );
     }
   }
+
 
 // // Helper to extract schedule ID from selected schedule string
 //   int _getScheduleId(String scheduleString) {
@@ -322,6 +368,25 @@ class _ServiceDropdownPageState extends State<ServiceDropdownPage> {
         dashboardType: DashboardType.user,
         onLogout: () => logOut(context),
         apiService: _apiService,
+        onLogoTap: () {
+          // Navigate to UserMenu with the required parameters
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => UserMenu(
+                userName: widget.userName,
+                userId: widget.userId,
+                floorId: widget.floorId,
+                roomNo: widget.roomNo,
+                rname: widget.userName,
+                loginResponse: {},
+                hotelId: widget.hotelId,
+              ),
+            ),
+                (Route<dynamic> route) => false,
+          );
+        },
+
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())

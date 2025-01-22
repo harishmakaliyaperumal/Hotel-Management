@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:holtelmanagement/features/customer/user_menu.dart';
 import 'package:holtelmanagement/features/customer/widgets/ratingpopup.dart';
 import 'package:holtelmanagement/features/services/apiservices.dart';
 
@@ -9,7 +10,20 @@ import '../../theme/colors.dart';
 import 'customerhistorymodels/cus_his_models.dart';
 
 class CustomerHistory extends StatefulWidget {
-  const CustomerHistory({super.key});
+  final String userName;
+  final int userId;
+  final Map<String, dynamic> loginResponse;
+  final int roomNo;
+  final int floorId;
+  final String rname;
+  final int hotelId;
+  const CustomerHistory({required this.userName,
+    required this.userId,
+    required this.loginResponse,
+    required this.roomNo,
+    required this.floorId,
+    required this.hotelId,
+    required this.rname ,super.key});
 
   @override
   State<CustomerHistory> createState() => _CustomerHistoryState();
@@ -33,7 +47,6 @@ class _CustomerHistoryState extends State<CustomerHistory>
     // Initialize tab controller
     _tabController = TabController(length: 2, vsync: this);
 
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final newLanguage = Localizations.localeOf(context).languageCode;
       if (_currentLanguage != newLanguage) {
@@ -43,8 +56,6 @@ class _CustomerHistoryState extends State<CustomerHistory>
       }
     });
   }
-
-
 
   @override
   void dispose() {
@@ -75,7 +86,9 @@ class _CustomerHistoryState extends State<CustomerHistory>
       final requests = await _apiService.getCustomerRequestsById();
       if (mounted) {
         setState(() {
-          _history = requests.map((request) => request.toMap()).toList(); // Convert to map
+          _history = requests
+              .map((request) => request.toMap())
+              .toList(); // Convert to map
         });
       }
     } catch (e) {
@@ -179,10 +192,8 @@ class _CustomerHistoryState extends State<CustomerHistory>
 
   bool _hasOrderFoodTask() {
     return _history.any((task) =>
-    task['taskName']?.toLowerCase().contains('order food') ?? false);
+        task['taskName']?.toLowerCase().contains('order food') ?? false);
   }
-
-
 
   String _getLocalizedTaskName(Map<String, dynamic> task) {
     switch (_currentLanguage) {
@@ -227,48 +238,49 @@ class _CustomerHistoryState extends State<CustomerHistory>
   Widget _buildHistoryList(BuildContext context, String currentLanguage) {
     final tasks = _hasOrderFoodTask()
         ? _history.where((task) =>
-    !task['taskName']?.toLowerCase().contains('order food') ?? false)
+            !task['taskName']?.toLowerCase().contains('order food') ?? false)
         : _history;
 
     return tasks.isEmpty
         ? Center(
-      child: Text(
-        AppLocalizations.of(context)
-            .translate('cus_pg_req_his_nohis_htext'),
-        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-      ),
-    )
+            child: Text(
+              AppLocalizations.of(context)
+                  .translate('cus_pg_req_his_nohis_htext'),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          )
         : ListView.builder(
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        return _buildHistoryCard(tasks.elementAt(index));
-      },
-    );
+            itemCount: tasks.length,
+            itemBuilder: (context, index) {
+              return _buildHistoryCard(tasks.elementAt(index));
+            },
+          );
   }
 
   Widget _buildOrderFoodList(BuildContext context, String currentLanguage) {
     final orderFoodTasks = _history.where((task) =>
-    task['taskName']?.toLowerCase().contains('order food') ?? false);
+        task['taskName']?.toLowerCase().contains('order food') ?? false);
 
     return orderFoodTasks.isEmpty
         ? Center(
-      child: Text(
-        AppLocalizations.of(context).translate('no_order_food_tasks'),
-        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-      ),
-    )
+            child: Text(
+              AppLocalizations.of(context).translate('no_order_food_tasks'),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          )
         : ListView.builder(
-      itemCount: orderFoodTasks.length,
-      itemBuilder: (context, index) {
-        return _buildHistoryCard(orderFoodTasks.elementAt(index));
-      },
-    );
+            itemCount: orderFoodTasks.length,
+            itemBuilder: (context, index) {
+              return _buildHistoryCard(orderFoodTasks.elementAt(index));
+            },
+          );
   }
 
   Widget _buildHistoryCard(Map<String, dynamic> task) {
-    String headingText = task['taskName'] != null && task['taskName'].toString().isNotEmpty
-        ? _getLocalizedTaskName(task)  // Use localized task name instead
-        : (task['laterServiceName'] ?? 'N/A');
+    String headingText =
+        task['taskName'] != null && task['taskName'].toString().isNotEmpty
+            ? _getLocalizedTaskName(task) // Use localized task name instead
+            : (task['laterServiceName'] ?? 'N/A');
 
     // Determine if time rows should be shown
     bool showTimeRows = !task.containsKey('laterServiceName');
@@ -309,7 +321,7 @@ class _CustomerHistoryState extends State<CustomerHistory>
                   ),
                   Container(
                     padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: _getStatusColor(task['jobStatus'] ?? '')
                           .withOpacity(0.1),
@@ -321,7 +333,7 @@ class _CustomerHistoryState extends State<CustomerHistory>
                     ),
                     child: Text(
                       AppLocalizations.of(context).translate(
-                          task['jobStatus']?.toLowerCase() ?? '') ??
+                              task['jobStatus']?.toLowerCase() ?? '') ??
                           'N/A',
                       style: TextStyle(
                         color: _getStatusColor(task['jobStatus'] ?? ''),
@@ -369,18 +381,21 @@ class _CustomerHistoryState extends State<CustomerHistory>
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                  Icon(Icons.access_time,
+                      size: 16, color: Colors.grey.shade600),
                   const SizedBox(width: 8),
                   Text(
-                  AppLocalizations.of(context)
-                      .translate('user_history_pg_card_text_estime'),
+                    AppLocalizations.of(context)
+                        .translate('user_history_pg_card_text_estime'),
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey.shade600,
                     ),
                   ),
                   Text(
-                    task['estimationTime'] ?? 'N/A',
+                    task['estimationTime'] != null
+                        ? '${task['estimationTime']} minutes' // Append "minutes" to the estimationTime
+                        : 'N/A',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -389,7 +404,6 @@ class _CustomerHistoryState extends State<CustomerHistory>
                   ),
                 ],
               ),
-
               const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,7 +492,6 @@ class _CustomerHistoryState extends State<CustomerHistory>
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final currentLanguage = Localizations.localeOf(context).languageCode;
@@ -491,6 +504,25 @@ class _CustomerHistoryState extends State<CustomerHistory>
         dashboardType: DashboardType.user,
         onLogout: () => logOut(context),
         apiService: _apiService,
+        onLogoTap: () {
+          // Navigate to UserMenu with the required parameters
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => UserMenu(
+                userName: widget.userName,
+                userId: widget.userId,
+                floorId: widget.floorId,
+                roomNo: widget.roomNo,
+                rname: widget.userName,
+                loginResponse: {},
+                hotelId: widget.hotelId,
+              ),
+            ),
+                (Route<dynamic> route) => false,
+          );
+        },
+
       ),
       body: Column(
         children: [
@@ -523,12 +555,12 @@ class _CustomerHistoryState extends State<CustomerHistory>
           Expanded(
             child: _hasOrderFoodTask()
                 ? TabBarView(
-              controller: _tabController,
-              children: [
-                _buildHistoryList(context, currentLanguage),
-                _buildOrderFoodList(context, currentLanguage),
-              ],
-            )
+                    controller: _tabController,
+                    children: [
+                      _buildHistoryList(context, currentLanguage),
+                      _buildOrderFoodList(context, currentLanguage),
+                    ],
+                  )
                 : _buildHistoryList(context, currentLanguage),
           ),
         ],
@@ -550,24 +582,24 @@ Widget _buildInfoRow(BuildContext context, String label, String value,
       const SizedBox(width: 5),
       isExpanded
           ? Expanded(
-        child: Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Color(0xff013457),
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      )
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xff013457),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            )
           : Text(
-        value,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Color(0xff013457),
-        ),
-      ),
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Color(0xff013457),
+              ),
+            ),
     ],
   );
 }

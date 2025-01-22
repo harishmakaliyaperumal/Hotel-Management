@@ -16,6 +16,7 @@ class UserMenu extends StatefulWidget {
   final int roomNo;
   final int floorId;
   final String rname;
+  final int hotelId;
 
   const UserMenu({
     super.key,
@@ -24,6 +25,7 @@ class UserMenu extends StatefulWidget {
     required this.loginResponse,
     required this.roomNo,
     required this.floorId,
+    required this.hotelId,
     required this.rname,
   });
 
@@ -43,12 +45,12 @@ class _UserMenuState extends State<UserMenu> {
   @override
   void initState() {
     super.initState();
-    _loadRestaurants();
+    _loadRestaurants(widget.hotelId);
   }
 
-  Future<void> _loadRestaurants() async {
+  Future<void> _loadRestaurants(int hotelId) async {
     try {
-      final fetchedRestaurants = await _apiService.fetchRestaurants();
+      final fetchedRestaurants = await _apiService.fetchRestaurants(widget.hotelId);
 
       if (!mounted) return;
 
@@ -108,7 +110,10 @@ class _UserMenuState extends State<UserMenu> {
             ),
             if (_error != null)
               TextButton(
-                onPressed: _loadRestaurants,
+                onPressed: () {
+                  Navigator.pop(context);
+                  _loadRestaurants(widget.hotelId);
+                },
                 child: Text(AppLocalizations.of(context).translate('retry')),
               ),
           ],
@@ -197,6 +202,7 @@ class _UserMenuState extends State<UserMenu> {
           floorId: widget.floorId,
           roomNo: widget.roomNo,
           userName: widget.userName,
+          hotelId: widget.hotelId,
         ),
       ),
     );
@@ -265,6 +271,7 @@ class _UserMenuState extends State<UserMenu> {
         dashboardType: DashboardType.user,
         onLogout: () => logOut(context),
         apiService: _apiService,
+
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -290,7 +297,7 @@ class _UserMenuState extends State<UserMenu> {
                 onTap: () async {
                   // First load restaurants
                   if (!_isInitialized || _error != null) {
-                    await _loadRestaurants();
+                    await _loadRestaurants(widget.hotelId);
                   }
 
                   if (!mounted) return;
@@ -339,6 +346,7 @@ class _UserMenuState extends State<UserMenu> {
                       floorId: widget.floorId,
                       rname: widget.rname,
                       loginResponse: widget.loginResponse,
+                      hotelId: widget.hotelId,
                     ),
                   ),
                 ),
@@ -358,6 +366,7 @@ class _UserMenuState extends State<UserMenu> {
                       roomNo: widget.roomNo,
                       floorId: widget.floorId,
                       rname: widget.rname,
+                      hotelId: widget.hotelId,
                       loginResponse: widget.loginResponse,
                     ),
                   ),
@@ -394,7 +403,14 @@ class _UserMenuState extends State<UserMenu> {
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const CustomerHistory(),
+                    builder: (context) => CustomerHistory(
+                      userName: widget.userName,
+                      userId: widget.userId,
+                      roomNo: widget.roomNo,
+                      floorId: widget.floorId,
+                      rname: widget.rname,
+                      loginResponse: widget.loginResponse,
+                      hotelId: widget.hotelId,),
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
