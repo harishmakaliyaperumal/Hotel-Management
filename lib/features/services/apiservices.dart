@@ -19,6 +19,7 @@ import '../kitchenMenu/kitchen_models/data.dart';
 class ApiService {
   final TokenProvider tokenProvider = TokenProvider();
   final String baseUrl = 'https://www.hotels.annulartech.net';
+  bool _isRefreshing = false;
 
   // final SharedPreferencesHelper _prefsHelper = SharedPreferencesHelper();
 
@@ -1288,6 +1289,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         print("Task updated successfully");
+        print('Response Status Code: ${response.statusCode}');
       } else {
         throw Exception(
           'Failed to update task. Status code: ${response.statusCode}, Body: ${response.body}',
@@ -1564,6 +1566,7 @@ class ApiService {
                     'flag': item['flag']?.toString() ?? '',
                     'feedback_status': item['feedback_status'] ?? false,
                     'completedAt': item['completedAt']?.toString(),
+                    'type': item['type']?.toString() ?? '',
                   })
               .toList();
 
@@ -1683,6 +1686,7 @@ class ApiService {
                     'flag': item['flag']?.toString() ?? '',
                     'feedback_status': item['feedback_status'] ?? false,
                     'completedAt': item['completedAt']?.toString(),
+                    'type': item['Description']?.toString() ?? '',
                   })
               .toList();
 
@@ -1721,7 +1725,13 @@ class ApiService {
     }
   }
 
-  Future<void> Statusupdate(int userId, String jobStatus, String requestJobHistoryId, String estimationTime) async {
+  Future<void> Statusupdate(
+      int userId,
+      String jobStatus,
+      String requestJobHistoryId,
+      String estimationTime,
+
+      ) async {
     try {
       // Get login data from _prefsHelper
       final loginData = await _prefsHelper.getLoginData();
@@ -1741,6 +1751,7 @@ class ApiService {
       // Get fresh JWT after potential refresh
       final currentLoginData = await _prefsHelper.getLoginData();
       final currentJwt = currentLoginData?['jwt'];
+
       final response = await http.put(
         Uri.parse(
             '$baseUrl/hotelapp/updateRequestJobStatus?userId=$userId&jobStatus=$jobStatus&requestJobHistoryId=$requestJobHistoryId&estimationTime=$estimationTime'),
@@ -1752,7 +1763,8 @@ class ApiService {
           "userId": userId,
           "jobStatus": jobStatus,
           "requestJobHistoryId": requestJobHistoryId,
-          "estimationTime": estimationTime
+          "estimationTime": estimationTime,
+
         }),
       );
 
@@ -1763,8 +1775,11 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final status = decodedResponse['status'];
+
+        print("checkkkkkkk: ${response.statusCode}");
         print("Task updated successfully");
         print('Response Status: $status');
+
       } else {
         print("Failed to update task: ${response.body}");
         throw Exception('Failed to update task');

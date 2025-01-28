@@ -97,6 +97,7 @@
   "user_pg_os_text_choose_time_slot": "Choisissez un créneau horaire",
   "user_pg_os_text_select_available_time_slot": "Sélectionnez un créneau horaire disponible",
   "user_pg_os_text_selected_date_time": " Date et heure sélectionnées",
-  "user_pg_os_text_book_now": "Réservez maintenant"
+  "user_pg_os_text_book_now": "Réservez maintenant",
+  "rejected": "Rejetée"
 
 }

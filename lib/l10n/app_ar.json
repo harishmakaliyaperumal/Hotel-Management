@@ -94,5 +94,6 @@
   "user_pg_os_text_choose_time_slot": "اختر فترة زمنية",
   "user_pg_os_text_select_available_time_slot": " اختر فترة زمنية متاحة",
   "user_pg_os_text_selected_date_time": "التاريخ والوقت المختار",
-  "user_pg_os_text_book_now": "احجز الآن"
+  "user_pg_os_text_book_now": "احجز الآن",
+  "rejected": "مرفوض"
 }

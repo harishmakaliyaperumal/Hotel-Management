@@ -98,5 +98,6 @@
   "user_pg_os_text_select_available_time_slot": "Select available time slot",
   "user_pg_os_text_selected_date_time": "Selected Date & Time",
   "user_pg_os_text_book_now": "Book Now",
-  "customer_request_tab": "Customer Request"
+  "customer_request_tab": "Customer Request",
+  "rejected": "Rejected"
 }

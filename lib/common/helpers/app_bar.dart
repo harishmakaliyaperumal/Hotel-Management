@@ -85,14 +85,14 @@ AppBar buildAppBar({
 
       // Get userId from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('userId');
+      final hotelId = prefs.getInt('hotelId');
 
-      if (userId == null) {
+      if (hotelId == null) {
         throw Exception('User ID not found');
       }
 
       // Make the API call
-      await apiService.notifyBreaks(userId);
+      await apiService.notifyBreaks(hotelId);
 
       // Close loading indicator
       if (context.mounted) {
