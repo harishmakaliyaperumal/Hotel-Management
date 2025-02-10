@@ -15,6 +15,8 @@ class User {
     required this.floorId,
   });
 
+
+
   // Factory constructor to create User instance from JSON
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
